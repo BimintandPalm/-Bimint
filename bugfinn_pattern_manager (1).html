@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bugfinn Pattern Manager</title>
+<style>
+:root{
+  --pink:#b9828f;--pink2:#ead5da;--pink3:#fff7f8;--dark:#49363b;
+  --muted:#8b7379;--white:#fff;--border:#eadde0;--shadow:0 8px 25px rgba(110,70,80,.09);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#faf7f8;color:var(--dark)}
+button,input,textarea,select{font:inherit}
+.header{background:linear-gradient(135deg,#b9828f,#c996a2);color:#fff;padding:28px 22px}
+.header-inner{max-width:1200px;margin:auto}
+h1{margin:0 0 7px;font-size:27px}.sub{opacity:.9}
+.container{max-width:1200px;margin:22px auto;padding:0 18px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.search{flex:1;min-width:240px;padding:13px 16px;border:1px solid var(--border);border-radius:13px;background:white;outline:none}
+.btn{border:0;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700}
+.btn-primary{background:var(--pink);color:#fff}.btn-light{background:#fff;border:1px solid var(--border);color:var(--dark)}
+.categories{display:flex;gap:8px;overflow:auto;padding-bottom:12px}
+.cat{white-space:nowrap;border:1px solid var(--border);background:#fff;padding:9px 13px;border-radius:999px;cursor:pointer}
+.cat.active{background:var(--pink);color:#fff;border-color:var(--pink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:15px}
+.card{background:#fff;border:1px solid var(--border);border-radius:17px;padding:17px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:220px}
+.card-top{display:flex;justify-content:space-between;gap:10px}.title{font-weight:800;font-size:17px;line-height:1.4}
+.badge{font-size:12px;background:var(--pink3);color:var(--pink);padding:5px 9px;border-radius:8px;white-space:nowrap}
+.content{white-space:pre-wrap;line-height:1.65;color:#5d4b50;margin:12px 0;display:-webkit-box;-webkit-line-clamp:8;-webkit-box-orient:vertical;overflow:hidden;flex:1}
+.actions{display:flex;gap:8px;margin-top:10px}.actions button{flex:1}
+.star{background:none;border:0;font-size:21px;cursor:pointer;color:#c5a5ad}.star.on{color:#d29b2f}
+.empty{text-align:center;padding:55px 20px;color:var(--muted)}
+.modal{display:none;position:fixed;inset:0;background:rgba(55,35,40,.4);align-items:center;justify-content:center;padding:15px;z-index:10}
+.modal.show{display:flex}.modal-box{background:#fff;width:min(700px,100%);max-height:90vh;overflow:auto;border-radius:20px;padding:22px}
+label{display:block;font-weight:700;margin:12px 0 7px}input,textarea,select{width:100%;padding:12px;border:1px solid var(--border);border-radius:11px;outline:none}textarea{min-height:230px;resize:vertical}
+.modal-actions{display:flex;gap:9px;margin-top:16px}.modal-actions button{flex:1}
+.toast{position:fixed;right:20px;bottom:20px;background:#49363b;color:white;padding:12px 17px;border-radius:12px;display:none;z-index:20}
+@media(max-width:600px){h1{font-size:23px}.grid{grid-template-columns:1fr}.container{padding:0 12px}.header{padding:22px 16px}}
+</style>
+</head>
+<body>
+<header class="header"><div class="header-inner">
+<h1>💗 Bugfinn Pattern Manager</h1><div class="sub">คลังข้อความสำหรับงานแอดมิน • ค้นหาและคัดลอกไปใช้ในแชทได้ทันที</div>
+</div></header>
+
+<main class="container">
+<div class="toolbar">
+<input id="search" class="search" placeholder="🔍 ค้นหา เช่น ดาวน์, NPL, iPhone, เอกสาร...">
+<button class="btn btn-primary" onclick="openModal()">＋ เพิ่ม Pattern</button>
+</div>
+<div id="cats" class="categories"></div>
+<div id="grid" class="grid"></div>
+</main>
+
+<div id="modal" class="modal">
+<div class="modal-box">
+<h2 id="modalTitle">เพิ่ม Pattern</h2>
+<input type="hidden" id="editId">
+<label>ชื่อ Pattern</label><input id="name" placeholder="เช่น แจ้งลูกค้าเครดิตผ่าน">
+<label>หมวดหมู่</label>
+<select id="category">
+<option>🔍 ตรวจสอบเครดิต</option><option>✅ เครดิตผ่าน</option><option>❌ ไม่อนุมัติ</option>
+<option>💰 ดาวน์</option><option>📱 iPhone 18 Series</option><option>📝 เอกสาร</option>
+<option>🖊️ ขั้นตอนทำสัญญา</option><option>💸 โอนยอด</option><option>🔧 เครื่องมือ 1</option>
+<option>📦 เครื่องนอก</option><option>💳 ค่าบริการ</option><option>👋 ข้อความทั่วไป</option><option>📌 อื่น ๆ</option>
+</select>
+<label>ข้อความ Pattern</label><textarea id="content" placeholder="ใส่ข้อความที่ต้องการคัดลอก..."></textarea>
+<div class="modal-actions"><button class="btn btn-light" onclick="closeModal()">ยกเลิก</button><button class="btn btn-primary" onclick="savePattern()">บันทึก</button></div>
+</div></div>
+<div id="toast" class="toast">คัดลอกแล้ว ✓</div>
+
+<script>
+const initial=[
+["ขอข้อมูลตรวจสอบเครดิต","🔍 ตรวจสอบเครดิต","เพื่อดำเนินการตรวจสอบเครดิต ขอทราบข้อมูลดังนี้\n- อาชีพ\n- รุ่นที่ลูกค้าสนใจทำผ่อน\n- ราคาเครื่อง\n- จำนวนเงินดาวน์"],
+["แจ้งเครดิตผ่าน","✅ เครดิตผ่าน","เบื้องต้นเครดิตลูกค้าผ่านค่ะ\n\nหากลูกค้าทำสัญญาต่อ หน้าร้านสร้างลิ้งค์ให้ลูกค้ากรอกข้อมูลและเพิ่มข้อมูลเครื่องเข้าระบบได้เลยนะคะ"],
+["ไม่อนุมัติ NPL","❌ ไม่อนุมัติ","📌 แจ้งผลตรวจสอบเคสค่ะ\nเบื้องต้นบริษัทไม่สามารถอนุมัติสินเชื่อให้ลูกค้าได้ค่ะ\n\nสาเหตุ: ลูกค้ามีสถานะ NPL / มีบัญชีค้างชำระอยู่ระหว่างติดตาม จึงไม่ผ่านเกณฑ์สินเชื่อค่ะ"],
+["ไม่อนุมัติ Blacklist Seller","❌ ไม่อนุมัติ","เคสนี้แอดมินได้ตรวจสอบดูแล้ว ยังไม่สามารถปล่อยเครดิตให้ได้นะคะ เนื่องจากลูกค้ามีการติดแบล็คลิสต์เซลล์เลอร์ ต้องขออภัยด้วยค่ะ🙏"],
+["แจ้งดาวน์ 35%","💰 ดาวน์","แอดมินพิจารณาตามหลักฐานที่มีค่ะพี่ ตามเงื่อนไขของบริษัทนะคะ หากลูกค้าสะดวกดาวน์ 35% แจ้งได้เลยนะคะ"],
+["iPhone 18 Pro Max 256GB","📱 iPhone 18 Series","📱 iPhone 18 Pro Max 256GB\nราคาอ้างอิง 52,900 บาท\n• OVP ได้ประมาณ 5,000 บาท"],
+["iPhone 18 Pro 256GB","📱 iPhone 18 Series","📱 iPhone 18 Pro 256GB\nราคาอ้างอิง 48,900 บาท\n• OVP ได้ประมาณ 3,000 บาท"],
+["เงื่อนไข iPhone 18 Series","📱 iPhone 18 Series","💰 วางดาวน์เริ่มต้น 30%\nกรณีไม่สะดวก/ไม่มีเอกสาร: วางเงินดาวน์ 40%"],
+["แนวทางแจ้งร้านค้า iPhone 18","📱 iPhone 18 Series","📌 แนวทางแจ้งร้านค้า iPhone 18 Series\n\nแจ้งเฉพาะ วางดาวน์เริ่มต้น 30% ไม่ต้องแจ้งวงเงิน OVP และให้ถามราคาขายของร้านก่อน\n\n• ราคาไม่เกินเกณฑ์ → แจ้งว่าจัดได้\n• ราคาเกินเกณฑ์ → แจ้งราคาสูงสุดที่จัดได้"],
+["แจ้งยอดโอนรอบถัดไป","💸 โอนยอด","แอดมินขอแจ้งให้ทราบเบื้องต้นก่อนนะคะพี่ เนื่องจากวันนี้ยอดโอนปิดงานเต็มแล้วค่ะ หากเคสนี้เครดิตผ่านและทางร้านดำเนินการต่อ ร้านจะได้รับยอดเป็นรอบของวันที่ 04/11/2569 นะคะ ทางร้านสะดวกไหมคะ"],
+["แจ้งยอดโอนรอบวันที่ 17 กย. 69","💸 โอนยอด","แอดมินขอแจ้งให้ทราบเพิ่มเติมนะคะพี่ เนื่องจากวันนี้ยอดโอนปิดงานเต็มแล้วค่ะ ร้านจะได้รับยอดเป็นรอบของวันที่ 17 กย. 69 นะคะ ทางร้านสะดวกไหมคะ"],
+["เอกสารเรียบร้อย / แจ้งวันโอน","💸 โอนยอด","BUG0000*** เอกสารเรียบร้อยค่ะพี่ ส่วนอนุมัติสัญญาและโอนยอดจะเป็นวันที่ 19/09/2569 ขอบพระคุณค่ะ"],
+["หมายเหตุ เครื่องมือ 1","🔧 เครื่องมือ 1","📌 หมายเหตุ (เครื่องมือ 1):\n• ร้านต้องเก็บกล่องเครื่องมือหนึ่งไว้ให้ลูกค้า\n• เมื่อลูกค้าผ่อนหมดให้มารับที่ร้านค้า"],
+["Statement ไม่สัมพันธ์กับค่างวด","💰 ดาวน์","แอดมินตรวจสอบแล้ว statement ลูกค้ายังไม่สัมพันธ์กับค่างวดค่ะ ลูกค้าสะดวกดาวน์ 35% ไหมคะ"],
+["อายุไม่ถึง 20 ปี","📝 เอกสาร","ในกรณีที่อายุไม่ถึง 20 ปีบริบูรณ์จะต้องมีผู้ปกครองเป็นผู้เซ็นยินยอมนะคะ"],
+["ขอภาพการทำงาน","📝 เอกสาร","ลูกค้ามีภาพการทำงานหรือหลักฐานการทำงานไหมคะ ส่งเข้ามาในแชทได้เลยนะคะ"],
+["ขอภาพการทำงาน (แบบสุภาพ)","📝 เอกสาร","ลูกค้ามีภาพการทำงาน หรือ หลักฐานการทำงานไหมคะ ส่งเข้ามาในแชทได้เลยค่ะ"],
+["เครื่องนอกผ่อนสูงสุด 9 เดือน","📦 เครื่องนอก","ขออนุญาตแจ้งเพิ่มเติมนะคะ เครื่องนอกผ่อนสูงสุด 9 เดือนค่ะ"],
+["เพิ่มเพื่อนไฟแนนซ์","🖊️ ขั้นตอนทำสัญญา","รบกวนแจ้งลูกค้าเพิ่มเพื่อนไฟแนนซ์เข้ามาหน่อยนะคะ\n\nhttps://www.facebook.com/profile.php?id=61594188324871"],
+["ข้อความต้อนรับ","👋 ข้อความทั่วไป","สวัสดีค่ะ Bugfinn Finance ยินดีให้บริการค่ะ🧡"],
+["ไม่อนุมัติ NPL (อีกแบบ)","❌ ไม่อนุมัติ","เคสนี้แอดมินตรวจสอบแล้วยังไม่สามารถปล่อยเครดิตให้ได้นะคะ เนื่องจากลูกค้ามีประวัติการค้างชำระค่างวด (สถานะ NPL) ต้องขออภัยในความไม่สะดวกด้วยค่ะ"],
+["ส่วนลดปิดก่อนกำหนด","💳 ค่าบริการ","ปิดก่อนงวดที่ 1 ลด 20%\nปิดก่อนงวดที่ 2 ลด 15%\nปิดตั้งแต่งวดที่ 3 ขึ้นไปลด 10% ค่ะ"],
+["ขั้นตอนหลังตรวจสอบผ่าน","🖊️ ขั้นตอนทำสัญญา","หากดำเนินการขั้นตอนนี้เรียบร้อยแล้ว หน้าร้านสามารถดำเนินการต่อได้ด้วยตัวเองตามขั้นตอนที่แอดมินส่งให้ได้เลยนะคะ จะเป็นขั้นตอนการสร้างลิงค์ เซ็นสัญญาและยืนยันการรับสินค้าค่ะ"],
+["ไม่สามารถตรวจสอบ / ดาวน์ 35%","💰 ดาวน์","เนื่องจากแอดมินไม่สามารถตรวจสอบได้ ตามเงื่อนไขของบริษัทต้องวางดาวน์ 35% เพื่อดำเนินการต่อนะคะ"],
+["เปลี่ยนรอบชำระ","💳 ค่าบริการ","เปลี่ยนรอบชำระ ค่าบริการ 300 บาท\n\nช่องทางโอนเงิน\nธนาคารกรุงไทย\nเลขบัญชี 6630313410\nชื่อบัญชี อรรถพล บุตรพรม\n\nหากโอนแล้วส่งสลิปให้ทางแอดมินตรวจสอบได้เลยค่ะ"],
+["ขอปลดล็อกเครื่อง","💳 ค่าบริการ","เรื่อง: แจ้งขอปลดล็อกเครื่อง - ลูกค้าต้องการเปลี่ยนเครื่อง\nเลขที่สัญญา: BUG0000782\nชื่อ-สกุล: วรวุฒิ ศรีประเสริฐ\nSerial Number: QK2Q5W75V9\n\n📌 ร้านเพียวโมบาย ได้โอนเงินให้บริษัทแล้ว\nค่าบริการปลดออกจากระบบ 150 = รวม 150 บาท\nตรวจสอบสลิปโอนเรียบร้อยค่ะ @! Boommm"],
+["ขอชื่อ-นามสกุล","📝 เอกสาร","รบกวนขอชื่อ - นามสกุลของลูกค้าเพิ่มเติมหน่อยนะคะ"],["ขอเอกสารเพิ่มเติม","📝 เอกสาร","📍 แอดมินรบกวนขอเอกสารเพิ่มเติมนะคะ\n\n📂 เลือกส่งเพียง 1 อย่าง:\n\n✅ 1. สลิปเงินเดือน (3 เดือนย้อนหลัง)\n✅ 2. สเตทเมนต์ธนาคาร (3 เดือนย้อนหลัง)\n\n💡 หมายเหตุ: หากลูกค้าไม่สะดวกเรื่องเอกสาร จะต้องปรับเป็น วางเงินดาวน์ 35% เพื่อรับเครื่องค่ะ"],
+["เครื่องราคาสูง","💰 ดาวน์","📍เนื่องจากเป็นสินค้ามูลค่าสูง เงื่อนไขบริษัทจะต้องมี เอกสารรายได้ประกอบการส่งเคสทุกครั้ง ค่ะ\n\nเลือกส่งเพียง 1 อย่าง:\n\n✅ 1. สลิปเงินเดือน (3 เดือนย้อนหลัง)\n✅ 2. สเตทเมนต์ธนาคาร (3 เดือนย้อนหลัง)\n\n⚠️ กรณีไม่สะดวก/ไม่มีเอกสาร: จะต้องปรับเป็น วางเงินดาวน์ 35% เพื่ออนุมัติรับเครื่องค่ะ"],
+["iPhone 18 Series — ดาวน์เริ่มต้น 30%","📱 iPhone 18 Series","📢 แจ้งเงื่อนไขผ่อน iPhone 18 Series\n\n📱 ดาวน์เริ่มต้น 30%\n📆 ผ่อนสูงสุด 15 งวด\n\n📌 เงื่อนไขสำคัญ\nทุกเคสต้องแนบ เอกสารแสดงรายได้ ประกอบการส่งเคส โดยเลือกส่งเพียง 1 อย่าง ดังนี้\n\n✅ 1. สลิปเงินเดือนย้อนหลัง 3 เดือน\n✅ 2. สเตทเมนต์ธนาคารย้อนหลัง 3 เดือน\n\n⚠️ กรณีไม่มีหรือไม่สะดวกส่งเอกสารรายได้\nจะต้องปรับเป็น ดาวน์ 40% เพื่อดำเนินการอนุมัติรับเครื่องค่ะ"]
+].map((x,i)=>({id:"p"+i,name:x[0],category:x[1],content:x[2],fav:false}));
+
+let data=JSON.parse(localStorage.getItem("bugfinn_patterns")||"null")||initial;
+let active="ทั้งหมด";
+const $=id=>document.getElementById(id);
+
+function saveLocal(){localStorage.setItem("bugfinn_patterns",JSON.stringify(data))}
+function categories(){
+  const cats=["ทั้งหมด",...new Set(data.map(x=>x.category))];
+  $("cats").innerHTML=cats.map(c=>`<button class="cat ${c===active?'active':''}" onclick="setCat(${JSON.stringify(c)})">${c}</button>`).join("");
+}
+function setCat(c){active=c;render()}
+function render(){
+  categories();
+  const q=$("search").value.toLowerCase().trim();
+  const list=data.filter(x=>(active==="ทั้งหมด"||x.category===active)&&(!q||(x.name+" "+x.category+" "+x.content).toLowerCase().includes(q)))
+  $("grid").innerHTML=list.length?list.map(x=>`
+  <article class="card">
+    <div class="card-top"><div class="title">${esc(x.name)}</div><button class="star ${x.fav?'on':''}" onclick="toggleFav('${x.id}')">${x.fav?'★':'☆'}</button></div>
+    <div><span class="badge">${esc(x.category)}</span></div>
+    <div class="content">${esc(x.content)}</div>
+    <div class="actions"><button class="btn btn-primary" onclick="copyText('${x.id}')">📋 คัดลอก</button><button class="btn btn-light" onclick="editPattern('${x.id}')">✏️ แก้ไข</button></div>
+  </article>`).join(""):`<div class="empty">ไม่พบ Pattern ที่ค้นหา</div>`;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+async function copyText(id){
+ const x=data.find(a=>a.id===id);
+ try{await navigator.clipboard.writeText(x.content)}catch(e){const t=document.createElement("textarea");t.value=x.content;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove()}
+ $("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",1400)
+}
+function toggleFav(id){const x=data.find(a=>a.id===id);x.fav=!x.fav;saveLocal();render()}
+function openModal(){
+ $("modalTitle").textContent="เพิ่ม Pattern";$("editId").value="";$("name").value="";$("content").value="";$("category").value="🔍 ตรวจสอบเครดิต";$("modal").classList.add("show")
+}
+function editPattern(id){const x=data.find(a=>a.id===id);$("modalTitle").textContent="แก้ไข Pattern";$("editId").value=id;$("name").value=x.name;$("content").value=x.content;$("category").value=x.category;$("modal").classList.add("show")}
+function closeModal(){$("modal").classList.remove("show")}
+function savePattern(){
+ const name=$("name").value.trim(),content=$("content").value.trim(),category=$("category").value;
+ if(!name||!content){alert("กรุณากรอกชื่อและข้อความ Pattern");return}
+ const id=$("editId").value;
+ if(id){Object.assign(data.find(x=>x.id===id),{name,content,category})}
+ else data.unshift({id:"p"+Date.now(),name,content,category,fav:false});
+ saveLocal();closeModal();render()
+}
+$("search").addEventListener("input",render);
+$("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal()});
+render();
+</script>
+</body>
+</html>
