@@ -1,1 +1,93 @@
+name: Add Pattern from Issue
 
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  add-pattern:
+    if: startsWith(github.event.issue.title, '[PATTERN]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Add Pattern to patterns.json
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const body = process.env.ISSUE_BODY || '';
+
+          function getSection(title) {
+            const regex = new RegExp(
+              '### ' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') +
+              '\\s*\\n([\\s\\S]*?)(?=\\n### |$)'
+            );
+
+            const match = body.match(regex);
+
+            return match ? match[1].trim() : '';
+          }
+
+          const name = getSection('ชื่อ Pattern');
+          const category = getSection('หมวดหมู่');
+          const content = getSection('ข้อความ Pattern');
+
+          if (!name || !content) {
+            console.log('ข้อมูล Pattern ไม่ครบ');
+            process.exit(1);
+          }
+
+          const file = 'patterns.json';
+
+          let patterns = [];
+
+          if (fs.existsSync(file)) {
+            patterns = JSON.parse(fs.readFileSync(file, 'utf8'));
+          }
+
+          const newPattern = {
+            id: 'p' + Date.now(),
+            title: name,
+            category: category || 'ทั่วไป',
+            content: content,
+            fav: false
+          };
+
+          patterns.push(newPattern);
+
+          fs.writeFileSync(
+            file,
+            JSON.stringify(patterns, null, 2) + '\n',
+            'utf8'
+          );
+
+          console.log('เพิ่ม Pattern สำเร็จ:', newPattern);
+          NODE
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add patterns.json
+
+          git diff --cached --quiet || git commit -m "Add new pattern"
+
+          git push
+
+      - name: Close issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue close ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --comment "เพิ่ม Pattern เข้าเว็บไซต์เรียบร้อยแล้วค่ะ 💗"
