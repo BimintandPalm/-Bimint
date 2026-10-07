@@ -56,7 +56,7 @@ jobs:
 
           const newPattern = {
             id: 'p' + Date.now(),
-            title: name,
+            name: name,
             category: category || 'ทั่วไป',
             content: content,
             fav: false
