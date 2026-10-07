@@ -182,27 +182,43 @@ function toggleFav(id){
  render();
 }
 
+function savePattern(){
+  const name = $("name").value.trim();
+  const content = $("content").value.trim();
+  const category = $("category").value;
 
-function openModal(){
-  const modal = $("modal");
-  const modalTitle = $("modalTitle");
-  const editId = $("editId");
-  const name = $("name");
-  const content = $("content");
-  const category = $("category");
-
-  modalTitle.textContent = "เพิ่ม Pattern";
-  editId.value = "";
-  name.value = "";
-  content.value = "";
-
-  populateCategorySelect();
-
-  if(category.options.length > 0){
-    category.selectedIndex = 0;
+  if(!name || !content){
+    alert("กรุณากรอกชื่อและข้อความ Pattern");
+    return;
   }
 
-  modal.classList.add("show");
+  const id = $("editId").value;
+
+  if(id){
+    const item = data.find(x => x.id === id);
+
+    if(item){
+      item.name = name;
+      item.content = content;
+      item.category = category;
+    }
+  }else{
+    data.unshift({
+      id: "p" + Date.now(),
+      name: name,
+      content: content,
+      category: category,
+      fav: false
+    });
+  }
+
+  saveLocal();
+
+  active = "ทั้งหมด";
+  $("search").value = "";
+
+  closeModal();
+  render();
 }
 
 
