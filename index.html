@@ -123,37 +123,37 @@ const $=id=>document.getElementById(id);
  async function loadPatterns(){
   try{
     const response = await fetch("patterns.json?v=" + Date.now());
-
-    if(!response.ok){
-      throw new Error("ไม่สามารถโหลด patterns.json ได้");
-    }
+    if(!response.ok) throw new Error("ไม่สามารถโหลด patterns.json ได้");
 
     const serverData = await response.json();
+    const localData = JSON.parse(localStorage.getItem("bugfinn_patterns") || "null");
+    const favoriteIds = JSON.parse(localStorage.getItem("bugfinn_favorites") || "[]");
 
-    const favoriteIds = JSON.parse(
-      localStorage.getItem("bugfinn_favorites") || "[]"
-    );
-
-    data = serverData.map(x => ({
+    // ใช้ข้อมูลที่แก้ไข/เพิ่มไว้ในเครื่อง ถ้ามี
+    data = (Array.isArray(localData) ? localData : serverData).map(x => ({
       ...x,
-      fav: favoriteIds.includes(x.id)
+      fav: favoriteIds.includes(x.id) || !!x.fav
     }));
 
     render();
-
   }catch(error){
     console.error(error);
-    alert("ไม่สามารถโหลดข้อมูล Pattern ได้");
+    const localData = JSON.parse(localStorage.getItem("bugfinn_patterns") || "null");
+    if(Array.isArray(localData)){
+      data = localData;
+      render();
+    }else{
+      alert("ไม่สามารถโหลดข้อมูล Pattern ได้");
+    }
   }
 }
 
-
 function saveLocal(){
+  localStorage.setItem("bugfinn_patterns", JSON.stringify(data));
   localStorage.setItem("bugfinn_favorites", JSON.stringify(
     data.filter(x => x.fav).map(x => x.id)
   ));
 }
-
 
 function populateCategorySelect(){
  const cats = Array.from(new Set([...defaultCategories, ...data.map(x=>x.category)]));
@@ -212,8 +212,18 @@ function toggleFav(id){
  render();
 }
 
-function savePattern(){
+function openModal(){
+  $("modalTitle").textContent="เพิ่ม Pattern";
+  $("editId").value="";
+  $("name").value="";
+  $("content").value="";
+  populateCategorySelect();
+  if($("category").options.length) $("category").selectedIndex=0;
+  $("modal").classList.add("show");
+  setTimeout(()=>$("name").focus(),50);
+}
 
+function savePattern(){
   const name = $("name").value.trim();
   const content = $("content").value.trim();
   const category = $("category").value;
@@ -224,69 +234,28 @@ function savePattern(){
     return;
   }
 
-  // ตอนนี้ระบบรองรับการ "เพิ่ม Pattern ใหม่" แบบแชร์ให้ทุกคนก่อน
-  if(id){
-    alert("ตอนนี้การแก้ไข Pattern แบบแชร์กำลังพัฒนาค่ะ 💗");
-    return;
-  }
-
-  const title = encodeURIComponent("[PATTERN] " + name);
-
-  const body = encodeURIComponent(
-`### ชื่อ Pattern
-${name}
-
-### หมวดหมู่
-${category}
-
-### ข้อความ Pattern
-${content}`
-  );
-
-  const url =
-    "https://github.com/BimintandPalm/-Bimint/issues/new" +
-    "?title=" + title +
-    "&body=" + body;
-
-  window.open(url, "_blank");
- return;
-
-  closeModal();
-
-  alert(
-    "กำลังเปิดหน้า GitHub เพื่อบันทึก Pattern ค่ะ 💗\n\n" +
-    "หลังจากนั้นกด Create issue ได้เลย"
-  );
-}
-  }
-
-  const id = $("editId").value;
+  let savedId = id;
 
   if(id){
     const item = data.find(x => x.id === id);
-
     if(item){
-      item.name = name;
-      item.content = content;
-      item.category = category;
+      Object.assign(item, {name, content, category});
     }
   }else{
-    data.unshift({
-      id: "p" + Date.now(),
-      name: name,
-      content: content,
-      category: category,
-      fav: false
-    });
+    savedId = "p" + Date.now();
+    data.unshift({id:savedId, name, content, category, fav:false});
   }
 
   saveLocal();
-
+  closeModal();
   active = "ทั้งหมด";
   $("search").value = "";
-
-  closeModal();
   render();
+
+  requestAnimationFrame(() => {
+    const card = document.querySelector(`.card [onclick*="${savedId}"]`)?.closest(".card");
+    if(card) card.scrollIntoView({behavior:"smooth", block:"center"});
+  });
 }
 
 
@@ -307,44 +276,16 @@ function deletePattern(id){
 
 
 function resetData(){
- if(confirm("คุณต้องการล้างข้อมูลและรีเซ็ตเป็นค่าเริ่มต้นใช่หรือไม่?")){
- localStorage.removeItem("bugfinn_patterns");
- data = initial;
- render();
+ if(confirm("คุณต้องการล้างข้อมูลที่แก้ไข/เพิ่มไว้ และรีเซ็ตเป็นข้อมูลเริ่มต้นใช่หรือไม่?")){
+   localStorage.removeItem("bugfinn_patterns");
+   localStorage.removeItem("bugfinn_favorites");
+   loadPatterns();
  }
 }
 
 
 function closeModal(){$("modal").classList.remove("show")}
 
-
-function savePattern(){
-  const name=$("name").value.trim(),content=$("content").value.trim(),category=$("category").value;
-  if(!name||!content){alert("กรุณากรอกชื่อและข้อความ Pattern");return}
-
-  const id=$("editId").value;
-  let savedId=id;
-
-  if(id){
-    const item=data.find(x=>x.id===id);
-    if(item) Object.assign(item,{name,content,category});
-  }else{
-    savedId="p"+Date.now();
-    data.unshift({id:savedId,name,content,category,fav:false});
-  }
-
-  saveLocal();
-  closeModal();
-
-  active="ทั้งหมด";
-  $("search").value="";
-  render();
-
-  requestAnimationFrame(()=>{
-    const card=document.querySelector(`.card [onclick*="${savedId}"]`)?.closest(".card");
-    if(card) card.scrollIntoView({behavior:"smooth",block:"center"});
-  });
-}
 
 
 $("search").addEventListener("input",render);
