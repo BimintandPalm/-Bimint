@@ -227,28 +227,47 @@ function savePattern(){
     return;
   }
 
-  let savedId = id;
-
+ 
   if(id){
     const item = data.find(x => x.id === id);
+
     if(item){
-      Object.assign(item, {name, content, category});
+      Object.assign(item, {
+        name,
+        content,
+        category
+      });
     }
-  }else{
-    savedId = "p" + Date.now();
-    data.unshift({id:savedId, name, content, category, fav:false});
+
+    saveLocal();
+    closeModal();
+    render();
+    return;
   }
 
-  saveLocal();
-  closeModal();
-  active = "ทั้งหมด";
-  $("search").value = "";
-  render();
+  const issueTitle = `[PATTERN] ${name}`;
 
-  requestAnimationFrame(() => {
-    const card = document.querySelector(`.card [onclick*="${savedId}"]`)?.closest(".card");
-    if(card) card.scrollIntoView({behavior:"smooth", block:"center"});
-  });
+  const issueBody =
+`### ชื่อ Pattern
+${name}
+
+### หมวดหมู่
+${category || "ทั่วไป"}
+
+### ข้อความ Pattern
+${content}
+`;
+
+ 
+  const owner = "BimintandPalm";
+  const repo = "-Bimint.html";
+
+  const issueUrl =
+    `https://github.com/${owner}/${repo}/issues/new` +
+    `?title=${encodeURIComponent(issueTitle)}` +
+    `&body=${encodeURIComponent(issueBody)}`;
+
+  window.location.href = issueUrl;
 }
 
 
