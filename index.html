@@ -161,12 +161,21 @@ async function copyText(id){
  $("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",1400)
 }
 
-function toggleFav(id){const x=data.find(a=>a.id===id);x.fav=!x.fav;saveLocal();render()}
+function toggleFav(id){
+  const x = data.find(a => a.id === id);
+  x.fav = !x.fav;
+  saveLocal();
+  render();
+}
 
 function openModal(){
- $("modalTitle").textContent="เพิ่ม Pattern";$("editId").value="";$("name").value="";$("content").value="";
- if($("category").options.length>0) $("category").selectedIndex=0;
- $("modal").classList.add("show");
+  $("modalTitle").textContent = "เพิ่ม Pattern";
+  $("editId").value = "";
+  $("name").value = "";
+  $("content").value = "";
+  if($("category").options.length > 0)
+    $("category").selectedIndex = 0;
+  $("modal").classList.add("show");
 }
 
 function editPattern(id){
