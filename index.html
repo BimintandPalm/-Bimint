@@ -117,12 +117,42 @@ const initial=[
 ].map((x,i)=>({id:"p"+i,name:x[0],category:x[1],content:x[2],fav:false}));
 
 
-let data=JSON.parse(localStorage.getItem("bugfinn_patterns")||"null")||initial;
+let data = [];
 let active="ทั้งหมด";
 const $=id=>document.getElementById(id);
+ async function loadPatterns(){
+  try{
+    const response = await fetch("patterns.json?v=" + Date.now());
+
+    if(!response.ok){
+      throw new Error("ไม่สามารถโหลด patterns.json ได้");
+    }
+
+    const serverData = await response.json();
+
+    const favoriteIds = JSON.parse(
+      localStorage.getItem("bugfinn_favorites") || "[]"
+    );
+
+    data = serverData.map(x => ({
+      ...x,
+      fav: favoriteIds.includes(x.id)
+    }));
+
+    render();
+
+  }catch(error){
+    console.error(error);
+    alert("ไม่สามารถโหลดข้อมูล Pattern ได้");
+  }
+}
 
 
-function saveLocal(){localStorage.setItem("bugfinn_patterns",JSON.stringify(data))}
+function saveLocal(){
+  localStorage.setItem("bugfinn_favorites", JSON.stringify(
+    data.filter(x => x.fav).map(x => x.id)
+  ));
+}
 
 
 function populateCategorySelect(){
@@ -281,7 +311,7 @@ function savePattern(){
 
 $("search").addEventListener("input",render);
 $("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal()});
-render();
+loadPatterns();
 </script>
 </body>
 </html>
