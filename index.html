@@ -56,7 +56,7 @@ label{display:block;font-weight:700;margin:12px 0 7px}input,textarea,select{widt
 <main class="container">
 <div class="toolbar">
 <input id="search" class="search" placeholder="🔍 ค้นหา เช่น ดาวน์, NPL, iPhone, เอกสาร...">
-<button class="btn btn-primary" onclick="openModal()">＋ เพิ่ม Pattern</button>
+<button type="button" id="addPatternBtn" class="btn btn-primary">＋ เพิ่ม Pattern</button>
 </div>
 <div id="cats" class="categories"></div>
 <div id="grid" class="grid"></div>
@@ -71,7 +71,7 @@ label{display:block;font-weight:700;margin:12px 0 7px}input,textarea,select{widt
 <label>หมวดหมู่</label>
 <select id="category"></select>
 <label>ข้อความ Pattern</label><textarea id="content" placeholder="ใส่ข้อความที่ต้องการคัดลอก..."></textarea>
-<div class="modal-actions"><button class="btn btn-light" onclick="closeModal()">ยกเลิก</button><button class="btn btn-primary" onclick="savePattern()">บันทึก</button></div>
+<div class="modal-actions"><button type="button" id="cancelModalBtn" class="btn btn-light">ยกเลิก</button><button type="button" id="savePatternBtn" class="btn btn-primary">บันทึก</button></div>
 </div></div>
 <div id="toast" class="toast">คัดลอกแล้ว ✓</div>
 
@@ -123,37 +123,30 @@ const $=id=>document.getElementById(id);
  async function loadPatterns(){
   try{
     const response = await fetch("patterns.json?v=" + Date.now());
-    if(!response.ok) throw new Error("ไม่สามารถโหลด patterns.json ได้");
-
+    if(!response.ok) throw new Error("โหลด patterns.json ไม่สำเร็จ");
     const serverData = await response.json();
-    const localData = JSON.parse(localStorage.getItem("bugfinn_patterns") || "null");
     const favoriteIds = JSON.parse(localStorage.getItem("bugfinn_favorites") || "[]");
-
-    // ใช้ข้อมูลที่แก้ไข/เพิ่มไว้ในเครื่อง ถ้ามี
-    data = (Array.isArray(localData) ? localData : serverData).map(x => ({
-      ...x,
-      fav: favoriteIds.includes(x.id) || !!x.fav
-    }));
-
-    render();
-  }catch(error){
-    console.error(error);
-    const localData = JSON.parse(localStorage.getItem("bugfinn_patterns") || "null");
-    if(Array.isArray(localData)){
-      data = localData;
-      render();
+    const localPatterns = JSON.parse(localStorage.getItem("bugfinn_patterns") || "null");
+    if(Array.isArray(localPatterns)){
+      data = localPatterns;
     }else{
-      alert("ไม่สามารถโหลดข้อมูล Pattern ได้");
+      data = serverData.map(x => ({...x, fav: favoriteIds.includes(x.id)}));
     }
+  }catch(error){
+    console.warn("ใช้ข้อมูลเริ่มต้นแทน patterns.json", error);
+    const favoriteIds = JSON.parse(localStorage.getItem("bugfinn_favorites") || "[]");
+    const localPatterns = JSON.parse(localStorage.getItem("bugfinn_patterns") || "null");
+    data = Array.isArray(localPatterns) ? localPatterns : initial.map(x => ({...x, fav: favoriteIds.includes(x.id)}));
   }
+  render();
 }
+
 
 function saveLocal(){
   localStorage.setItem("bugfinn_patterns", JSON.stringify(data));
-  localStorage.setItem("bugfinn_favorites", JSON.stringify(
-    data.filter(x => x.fav).map(x => x.id)
-  ));
+  localStorage.setItem("bugfinn_favorites", JSON.stringify(data.filter(x=>x.fav).map(x=>x.id)));
 }
+
 
 function populateCategorySelect(){
  const cats = Array.from(new Set([...defaultCategories, ...data.map(x=>x.category)]));
@@ -279,7 +272,10 @@ function resetData(){
  if(confirm("คุณต้องการล้างข้อมูลที่แก้ไข/เพิ่มไว้ และรีเซ็ตเป็นข้อมูลเริ่มต้นใช่หรือไม่?")){
    localStorage.removeItem("bugfinn_patterns");
    localStorage.removeItem("bugfinn_favorites");
-   loadPatterns();
+   data = initial.map(x=>({...x}));
+   active = "ทั้งหมด";
+   $("search").value = "";
+   render();
  }
 }
 
@@ -288,9 +284,14 @@ function closeModal(){$("modal").classList.remove("show")}
 
 
 
-$("search").addEventListener("input",render);
-$("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal()});
-loadPatterns();
+document.addEventListener("DOMContentLoaded",()=>{
+  $("addPatternBtn").addEventListener("click", openModal);
+  $("cancelModalBtn").addEventListener("click", closeModal);
+  $("savePatternBtn").addEventListener("click", savePattern);
+  $("search").addEventListener("input",render);
+  $("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal()});
+  loadPatterns();
+});
 </script>
 </body>
 </html>
