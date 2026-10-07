@@ -159,7 +159,7 @@ function render(){
     <div class="actions">
       <button class="btn btn-primary" onclick="copyText('${x.id}')">📋 คัดลอก</button>
       <button class="btn btn-light" onclick="editPattern('${x.id}')">✏️ แก้ไข</button>
-      <button class="btn btn-danger" onclick="deletePattern('${x.id}')">🗑️</button>
+      <button class="btn btn-danger" onclick="deletePattern('${x.id}')">🗑️ลบ</button>
     </div>
   </article>`).join(""):`<div class="empty">ไม่พบ Pattern ที่ค้นหา</div>`;
 }
@@ -184,13 +184,25 @@ function toggleFav(id){
 
 
 function openModal(){
- $("modalTitle").textContent = "เพิ่ม Pattern";
- $("editId").value = "";
- $("name").value = "";
- $("content").value = "";
- if($("category").options.length > 0)
- $("category").selectedIndex = 0;
- $("modal").classList.add("show");
+  const modal = $("modal");
+  const modalTitle = $("modalTitle");
+  const editId = $("editId");
+  const name = $("name");
+  const content = $("content");
+  const category = $("category");
+
+  modalTitle.textContent = "เพิ่ม Pattern";
+  editId.value = "";
+  name.value = "";
+  content.value = "";
+
+  populateCategorySelect();
+
+  if(category.options.length > 0){
+    category.selectedIndex = 0;
+  }
+
+  modal.classList.add("show");
 }
 
 
@@ -240,12 +252,10 @@ function savePattern(){
   saveLocal();
   closeModal();
 
-  // หลังบันทึก ให้เห็น Pattern ใหม่ทันทีเหมือนการ์ดอื่น ๆ
   active="ทั้งหมด";
   $("search").value="";
   render();
 
-  // เลื่อนไปที่ Pattern ที่เพิ่งเพิ่ม/แก้ไข
   requestAnimationFrame(()=>{
     const card=document.querySelector(`.card [onclick*="${savedId}"]`)?.closest(".card");
     if(card) card.scrollIntoView({behavior:"smooth",block:"center"});
