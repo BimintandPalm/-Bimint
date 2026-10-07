@@ -227,7 +227,6 @@ function savePattern(){
     return;
   }
 
- 
   if(id){
     const item = data.find(x => x.id === id);
 
@@ -258,16 +257,16 @@ ${category || "ทั่วไป"}
 ${content}
 `;
 
- 
-const owner = "BimintandPalm";
-const repo = "Bimint";
+  const owner = "BimintandPalm";
+  const repo = "Bimint";
 
-const issueUrl =
-  `https://github.com/${owner}/${repo}/issues/new` +
-  `?title=${encodeURIComponent(issueTitle)}` +
-  `&body=${encodeURIComponent(issueBody)}`;
+  const issueUrl =
+    `https://github.com/${owner}/${repo}/issues/new` +
+    `?title=${encodeURIComponent(issueTitle)}` +
+    `&body=${encodeURIComponent(issueBody)}`;
 
-window.location.href = issueUrl;
+  window.location.href = issueUrl;
+}
 }
 
 
