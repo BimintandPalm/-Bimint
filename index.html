@@ -213,13 +213,51 @@ function toggleFav(id){
 }
 
 function savePattern(){
+
   const name = $("name").value.trim();
   const content = $("content").value.trim();
   const category = $("category").value;
+  const id = $("editId").value;
 
   if(!name || !content){
     alert("กรุณากรอกชื่อและข้อความ Pattern");
     return;
+  }
+
+  // ตอนนี้ระบบรองรับการ "เพิ่ม Pattern ใหม่" แบบแชร์ให้ทุกคนก่อน
+  if(id){
+    alert("ตอนนี้การแก้ไข Pattern แบบแชร์กำลังพัฒนาค่ะ 💗");
+    return;
+  }
+
+  const title = encodeURIComponent("[PATTERN] " + name);
+
+  const body = encodeURIComponent(
+`### ชื่อ Pattern
+${name}
+
+### หมวดหมู่
+${category}
+
+### ข้อความ Pattern
+${content}`
+  );
+
+  const url =
+    "https://github.com/BimintandPalm/-Bimint/issues/new" +
+    "?title=" + title +
+    "&body=" + body;
+
+  window.open(url, "_blank");
+ return;
+
+  closeModal();
+
+  alert(
+    "กำลังเปิดหน้า GitHub เพื่อบันทึก Pattern ค่ะ 💗\n\n" +
+    "หลังจากนั้นกด Create issue ได้เลย"
+  );
+}
   }
 
   const id = $("editId").value;
