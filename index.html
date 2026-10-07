@@ -244,7 +244,7 @@ function savePattern(){
     return;
   }
 
-  const issueTitle = `[PATTERN] ${name}`;
+  const title = encodeURIComponent("[PATTERN] " + name);
 
   const issueBody =
 `### ชื่อ Pattern
