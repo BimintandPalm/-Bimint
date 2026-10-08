@@ -1,85 +1,104 @@
-      - name: Add Pattern to patterns.json
+name: Add Pattern
+
+on:
+  issues:
+    types:
+      - opened
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  add-pattern:
+    if: startsWith(github.event.issue.title, "[PATTERN]")
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Parse Pattern
+        id: pattern
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          node <<'NODE'
-          const fs = require('fs');
+          python3 <<'PY'
+          import os
+          import re
+          import json
 
-          const body = process.env.ISSUE_BODY || '';
+          body = os.environ.get("ISSUE_BODY", "")
 
-          function getSection(title) {
-            const start = body.indexOf(`### ${title}`);
+          def get_field(name):
+              pattern = rf"### {re.escape(name)}\s*\n\s*(.*?)(?=\n### |\Z)"
+              m = re.search(pattern, body, re.S)
+              return m.group(1).strip() if m else ""
 
-            if (start === -1) return '';
+          name = get_field("ชื่อ Pattern")
+          category = get_field("หมวดหมู่")
+          content = get_field("ข้อความ Pattern")
 
-            const contentStart = start + (`### ${title}`).length;
+          if not name or not content:
+              raise SystemExit("Pattern data is incomplete")
 
-            const next = body.indexOf('\n### ', contentStart);
+          # ป้องกัน path traversal
+          safe_name = re.sub(r"[^a-zA-Z0-9ก-๙_-]+", "-", name).strip("-")
+          if not safe_name:
+              safe_name = "pattern"
 
-            return body
-              .slice(
-                contentStart,
-                next === -1 ? body.length : next
-              )
-              .trim();
+          # จำกัดความยาวชื่อไฟล์
+          safe_name = safe_name[:80]
+
+          output = {
+              "name": name,
+              "category": category or "ทั่วไป",
+              "content": content,
+              "fav": False
           }
 
-          const name = getSection('ชื่อ Pattern');
-          const category = getSection('หมวดหมู่');
-          const content = getSection('ข้อความ Pattern');
+          with open("/tmp/pattern.json", "w", encoding="utf-8") as f:
+              json.dump(output, f, ensure_ascii=False, indent=2)
 
-          console.log('ชื่อ Pattern:', name);
-          console.log('หมวดหมู่:', category);
-          console.log('ข้อความ Pattern:', content);
+          with open("/tmp/pattern_name", "w", encoding="utf-8") as f:
+              f.write(safe_name)
 
-          if (!name || !content) {
-            console.log('ข้อมูล Pattern ไม่ครบ');
-            process.exit(1);
-          }
+          print("Pattern:", name)
+          print("Category:", category)
+          PY
 
-          const file = 'patterns.json';
+      - name: Create Pattern File
+        run: |
+          mkdir -p data/patterns
 
-          let patterns = [];
+          NAME=$(cat /tmp/pattern_name)
 
-          if (fs.existsSync(file)) {
-            patterns = JSON.parse(
-              fs.readFileSync(file, 'utf8')
-            );
-          }
+          # ป้องกันชื่อซ้ำ
+          FILE="data/patterns/${NAME}.json"
 
-          const newPattern = {
-            id: 'p' + Date.now(),
-            name: name,
-            category: category || 'ทั่วไป',
-            content: content,
-            fav: false
-          };
+          if [ -f "$FILE" ]; then
+            FILE="data/patterns/${NAME}-${GITHUB_RUN_NUMBER}.json"
+          fi
 
-          patterns.push(newPattern);
+          cp /tmp/pattern.json "$FILE"
 
-          fs.writeFileSync(
-            file,
-            JSON.stringify(patterns, null, 2) + '\n',
-            'utf8'
-          );
+          echo "Created: $FILE"
 
-          console.log('เพิ่ม Pattern สำเร็จ:', newPattern);
-          NODE
-      - name: Commit changes
+      - name: Commit Pattern
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add patterns.json
+          git add data/patterns/
 
-          git diff --cached --quiet || git commit -m "Add new pattern"
+          git commit -m "Add Pattern from issue #${{ github.event.issue.number }}"
 
           git push
 
-      - name: Close issue
+      - name: Close Issue
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue close ${{ github.event.issue.number }} \
-            --repo ${{ github.repository }} \
-            --comment "เพิ่ม Pattern เข้าเว็บไซต์เรียบร้อยแล้วค่ะ 💗"
+            --repo "${{ github.repository }}" \
+            --comment "✅ เพิ่ม Pattern เรียบร้อยแล้ว"
