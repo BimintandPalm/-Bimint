@@ -216,55 +216,75 @@ function openModal(){
   setTimeout(()=>$("name").focus(),50);
 }
 
-function savePattern(){
+async function savePattern(){
   const name = $("name").value.trim();
   const content = $("content").value.trim();
   const category = $("category").value;
-  const id = $("editId").value;
 
   if(!name || !content){
     alert("กรุณากรอกชื่อและข้อความ Pattern");
     return;
   }
 
-  if(id){
-    const item = data.find(x => x.id === id);
+  const editId = $("editId").value;
 
-    if(item){
-      Object.assign(item, {
+  // =========================
+  // แก้ไข Pattern เดิม
+  // =========================
+  if(editId){
+    const x = data.find(a => a.id === editId);
+
+    if(x){
+      Object.assign(x, {
         name,
         content,
         category
       });
+
+      saveLocal();
+      closeModal();
+      render();
+
+      showToast("✅ แก้ไข Pattern แล้ว");
     }
 
-    saveLocal();
-    closeModal();
-    render();
     return;
   }
 
-  const title = encodeURIComponent("[PATTERN] " + name);
+  // =========================
+  // เพิ่ม Pattern ใหม่
+  // =========================
 
-  const issueBody =
-`### ชื่อ Pattern
-${name}
+  const title =
+    "[PATTERN] " +
+    name.replace(/[\r\n]/g, " ").trim();
 
-### หมวดหมู่
-${category || "ทั่วไป"}
-
-### ข้อความ Pattern
-${content}
-`;
-
-  const owner = "BimintandPalm";
-  const repo = "-Bimint";
+  const body = [
+    "### ชื่อ Pattern",
+    "",
+    name,
+    "",
+    "### หมวดหมู่",
+    "",
+    category,
+    "",
+    "### ข้อความ Pattern",
+    "",
+    content,
+    "",
+    "### ส่งจาก",
+    "",
+    "Pattern Manager"
+  ].join("\n");
 
   const issueUrl =
-    `https://github.com/${owner}/${repo}/issues/new` +
-    `?title=${encodeURIComponent(issueTitle)}` +
-    `&body=${encodeURIComponent(issueBody)}`;
+    "https://github.com/BimintandPalm/-Bimint/issues/new" +
+    "?title=" + encodeURIComponent(title) +
+    "&body=" + encodeURIComponent(body);
 
+  closeModal();
+
+  // เปิดหน้า GitHub สำหรับส่ง Pattern
   window.location.href = issueUrl;
 }
 
