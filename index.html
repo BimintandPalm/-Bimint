@@ -144,6 +144,56 @@ const $=id=>document.getElementById(id);
 
 function saveLocal(){
   localStorage.setItem("bugfinn_patterns", JSON.stringify(data));
+ async function loadPatterns(){
+  try{
+    const response = await fetch(
+      "./patterns.json?v=" + Date.now(),
+      {
+        cache: "no-store"
+      }
+    );
+
+    if(!response.ok){
+      throw new Error("โหลด patterns.json ไม่สำเร็จ");
+    }
+
+    const remoteData = await response.json();
+
+    const localData =
+      JSON.parse(
+        localStorage.getItem("bugfinn_patterns") || "[]"
+      );
+
+    const favoriteMap = {};
+
+    localData.forEach(x => {
+      if(x.fav){
+        favoriteMap[x.id] = true;
+      }
+    });
+
+    data = remoteData.map(x => ({
+      ...x,
+      fav: favoriteMap[x.id] ?? x.fav ?? false
+    }));
+
+    render();
+
+  }catch(error){
+    console.error(
+      "โหลด patterns.json ไม่สำเร็จ:",
+      error
+    );
+
+    data =
+      JSON.parse(
+        localStorage.getItem("bugfinn_patterns") || "null"
+      ) || initial;
+
+    render();
+  }
+
+  
   localStorage.setItem("bugfinn_favorites", JSON.stringify(data.filter(x=>x.fav).map(x=>x.id)));
 }
 
@@ -339,9 +389,14 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("addPatternBtn").addEventListener("click", openModal);
   $("cancelModalBtn").addEventListener("click", closeModal);
   $("savePatternBtn").addEventListener("click", savePattern);
-  $("search").addEventListener("input",render);
-  $("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal()});
-  loadPatterns();
+  $("search").addEventListener("input", render);
+  $("modal").addEventListener("click", e => {
+  if(e.target.id === "modal"){
+    closeModal();
+  }
+});
+
+loadPatterns();
 });
 </script>
 </body>
