@@ -198,6 +198,20 @@ async function copyText(id){
 }
 
 
+ function showToast(message){
+  const toast = $("toast");
+
+  if(!toast) return;
+
+  toast.textContent = message;
+  toast.style.display = "block";
+
+  setTimeout(() => {
+    toast.style.display = "none";
+  }, 1800);
+}
+
+ 
 function toggleFav(id){
  const x = data.find(a => a.id === id);
  x.fav = !x.fav;
