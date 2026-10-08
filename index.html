@@ -52,6 +52,7 @@ label{display:block;font-weight:700;margin:12px 0 7px}input,textarea,select{widt
  </div>
 </header>
 
+
 <main class="container">
 <div class="toolbar">
 <input id="search" class="search" placeholder="🔍 ค้นหา เช่น ดาวน์, NPL, iPhone, เอกสาร...">
@@ -60,6 +61,7 @@ label{display:block;font-weight:700;margin:12px 0 7px}input,textarea,select{widt
 <div id="cats" class="categories"></div>
 <div id="grid" class="grid"></div>
 </main>
+
 
 <div id="modal" class="modal">
 <div class="modal-box">
@@ -73,12 +75,14 @@ label{display:block;font-weight:700;margin:12px 0 7px}input,textarea,select{widt
 </div></div>
 <div id="toast" class="toast">คัดลอกแล้ว ✓</div>
 
+
 <script>
 const defaultCategories = [
  "🔍 ตรวจสอบเครดิต", "✅ เครดิตผ่าน", "❌ ไม่อนุมัติ", "💰 ดาวน์", 
  "📱 iPhone 18 Series", "📝 เอกสาร", "🖊️ ขั้นตอนทำสัญญา", "💸 โอนยอด", 
  "🔧 เครื่องมือ 1", "📦 เครื่องนอก", "💳 ค่าบริการ", "👋 ข้อความทั่วไป", "📌 อื่น ๆ"
 ];
+
 
 const initial=[
 ["ขอข้อมูลตรวจสอบเครดิต","🔍 ตรวจสอบเครดิต","เพื่อดำเนินการตรวจสอบเครดิต ขอทราบข้อมูลดังนี้\n- อาชีพ\n- รุ่นที่ลูกค้าสนใจทำผ่อน\n- ราคาเครื่อง\n- จำนวนเงินดาวน์"],
@@ -112,6 +116,7 @@ const initial=[
 ["iPhone 18 Series — ดาวน์เริ่มต้น 30%","📱 iPhone 18 Series","📢 แจ้งเงื่อนไขผ่อน iPhone 18 Series\n\n📱 ดาวน์เริ่มต้น 30%\n📆 ผ่อนสูงสุด 15 งวด\n\n📌 เงื่อนไขสำคัญ\nทุกเคสต้องแนบ เอกสารแสดงรายได้ ประกอบการส่งเคส โดยเลือกส่งเพียง 1 อย่าง ดังนี้\n\n✅ 1. สลิปเงินเดือนย้อนหลัง 3 เดือน\n✅ 2. สเตทเมนต์ธนาคารย้อนหลัง 3 เดือน\n\n⚠️ กรณีไม่มีหรือไม่สะดวกส่งเอกสารรายได้\nจะต้องปรับเป็น ดาวน์ 40% เพื่อดำเนินการอนุมัติรับเครื่องค่ะ"]
 ].map((x,i)=>({id:"p"+i,name:x[0],category:x[1],content:x[2],fav:false}));
 
+
 let data = [];
 let active="ทั้งหมด";
 const $=id=>document.getElementById(id);
@@ -135,6 +140,7 @@ const $=id=>document.getElementById(id);
   }
   render();
 }
+
 
 function saveLocal(){
   localStorage.setItem("bugfinn_patterns", JSON.stringify(data));
@@ -187,21 +193,25 @@ function saveLocal(){
     render();
   }
 
-  
+
   localStorage.setItem("bugfinn_favorites", JSON.stringify(data.filter(x=>x.fav).map(x=>x.id)));
 }
+
 
 function populateCategorySelect(){
  const cats = Array.from(new Set([...defaultCategories, ...data.map(x=>x.category)]));
  $("category").innerHTML = cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
 }
 
+
 function categories(){
  const cats=["ทั้งหมด", "⭐ รายการโปรด", ...new Set([...defaultCategories, ...data.map(x=>x.category)])];
  $("cats").innerHTML=cats.map(c=>`<button class="cat ${c===active?'active':''}" onclick="setCat(${JSON.stringify(c)})">${c}</button>`).join("");
 }
 
+
 function setCat(c){active=c;render()}
+
 
 function render(){
  categories();
@@ -212,6 +222,7 @@ function render(){
  const matchSearch = !q || (x.name+" "+x.category+" "+x.content).toLowerCase().includes(q);
  return matchCat && matchSearch;
  });
+
 
  $("grid").innerHTML=list.length?list.map(x=>`
   <article class="card">
@@ -226,13 +237,16 @@ function render(){
   </article>`).join(""):`<div class="empty">ไม่พบ Pattern ที่ค้นหา</div>`;
 }
 
+
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
 
 async function copyText(id){
  const x=data.find(a=>a.id===id);
  try{await navigator.clipboard.writeText(x.content)}catch(e){const t=document.createElement("textarea");t.value=x.content;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove()}
  $("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",1400)
 }
+
 
  function showToast(message){
   const toast = $("toast");
@@ -247,7 +261,7 @@ async function copyText(id){
   }, 1800);
 }
 
- 
+
 function toggleFav(id){
  const x = data.find(a => a.id === id);
  x.fav = !x.fav;
@@ -338,11 +352,13 @@ async function savePattern(){
   window.location.href = issueUrl;
 }
 
+
 function editPattern(id){
  const x=data.find(a=>a.id===id);
  $("modalTitle").textContent="แก้ไข Pattern";$("editId").value=id;$("name").value=x.name;$("content").value=x.content;$("category").value=x.category;
  $("modal").classList.add("show");
 }
+
 
 function deletePattern(id){
  if(confirm("คุณต้องการลบ Pattern นี้ใช่หรือไม่?")){
@@ -351,6 +367,7 @@ function deletePattern(id){
  render();
  }
 }
+
 
 function resetData(){
  if(confirm("คุณต้องการล้างข้อมูลที่แก้ไข/เพิ่มไว้ และรีเซ็ตเป็นข้อมูลเริ่มต้นใช่หรือไม่?")){
@@ -363,7 +380,10 @@ function resetData(){
  }
 }
 
+
 function closeModal(){$("modal").classList.remove("show")}
+
+
 
 document.addEventListener("DOMContentLoaded",()=>{
   $("addPatternBtn").addEventListener("click", openModal);
