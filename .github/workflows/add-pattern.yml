@@ -1,4 +1,4 @@
-name: Add Pattern
+name: Add Pattern from Issue
 
 on:
   issues:
@@ -11,22 +11,28 @@ permissions:
 
 jobs:
   add-pattern:
-    if: startsWith(github.event.issue.title, "[PATTERN]")
+    if: startsWith(github.event.issue.title, '[PATTERN]')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Parse Pattern
-        id: pattern
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Update patterns.json
+        id: parse_pattern
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          python3 <<'PY'
+          python3 << 'PY'
           import os
           import re
           import json
+          import time
 
           body = os.environ.get("ISSUE_BODY", "")
 
@@ -40,60 +46,46 @@ jobs:
           content = get_field("ข้อความ Pattern")
 
           if not name or not content:
-              raise SystemExit("Pattern data is incomplete")
+              print("::error::Pattern data is incomplete")
+              raise SystemExit(1)
 
-          # ป้องกัน path traversal
-          safe_name = re.sub(r"[^a-zA-Z0-9ก-๙_-]+", "-", name).strip("-")
-          if not safe_name:
-              safe_name = "pattern"
+          file_path = "patterns.json"
+          patterns = []
+          if os.path.exists(file_path):
+              try:
+                  with open(file_path, "r", encoding="utf-8") as f:
+                      patterns = json.load(f)
+              except Exception as e:
+                  print(f"Error reading {file_path}: {e}")
+                  patterns = []
 
-          # จำกัดความยาวชื่อไฟล์
-          safe_name = safe_name[:80]
+          # ตรวจสอบว่ามี Pattern ชื่อนี้อยู่แล้วหรือไม่ ถ้ามีให้อัปเดต ถ้าไม่มีให้แทรกใหม่
+          existing = next((p for p in patterns if p.get("name") == name), None)
+          if existing:
+              existing["category"] = category or existing.get("category", "📌 อื่น ๆ")
+              existing["content"] = content
+          else:
+              new_item = {
+                  "id": f"p_{int(time.time())}",
+                  "name": name,
+                  "category": category or "📌 อื่น ๆ",
+                  "content": content,
+                  "fav": False
+              }
+              patterns.insert(0, new_item)
 
-          output = {
-              "name": name,
-              "category": category or "ทั่วไป",
-              "content": content,
-              "fav": False
-          }
+          with open(file_path, "w", encoding="utf-8") as f:
+              json.dump(patterns, f, ensure_ascii=False, indent=2)
 
-          with open("/tmp/pattern.json", "w", encoding="utf-8") as f:
-              json.dump(output, f, ensure_ascii=False, indent=2)
-
-          with open("/tmp/pattern_name", "w", encoding="utf-8") as f:
-              f.write(safe_name)
-
-          print("Pattern:", name)
-          print("Category:", category)
+          print(f"Successfully processed pattern: {name}")
           PY
 
-      - name: Create Pattern File
-        run: |
-          mkdir -p data/patterns
-
-          NAME=$(cat /tmp/pattern_name)
-
-          # ป้องกันชื่อซ้ำ
-          FILE="data/patterns/${NAME}.json"
-
-          if [ -f "$FILE" ]; then
-            FILE="data/patterns/${NAME}-${GITHUB_RUN_NUMBER}.json"
-          fi
-
-          cp /tmp/pattern.json "$FILE"
-
-          echo "Created: $FILE"
-
-      - name: Commit Pattern
+      - name: Commit & Push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add data/patterns/
-
-          git commit -m "Add Pattern from issue #${{ github.event.issue.number }}"
-
-          git push
+          git add patterns.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-add pattern from Issue #${{ github.event.issue.number }}" && git push)
 
       - name: Close Issue
         env:
@@ -101,4 +93,4 @@ jobs:
         run: |
           gh issue close ${{ github.event.issue.number }} \
             --repo "${{ github.repository }}" \
-            --comment "✅ เพิ่ม Pattern เรียบร้อยแล้ว"
+            --comment "✅ เพิ่ม Pattern ลงในระบบ patterns.json เรียบร้อยแล้ว ทุกคนจะเห็นข้อมูลใหม่ในอีกประมาณ 1 นาทีครับ"
