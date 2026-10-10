@@ -6,397 +6,912 @@
 <title>Bugfinn Pattern Manager</title>
 <style>
 :root{
- --pink:#b9828f;--pink2:#ead5da;--pink3:#fff7f8;--dark:#49363b;
- --muted:#8b7379;--white:#fff;--border:#eadde0;--shadow:0 8px 25px rgba(110,70,80,.09);
- --danger:#d9534f;
+  --pink:#b9828f;
+  --pink-hover:#a7707e;
+  --pink2:#ead5da;
+  --pink3:#fff7f8;
+  --dark:#49363b;
+  --muted:#8b7379;
+  --white:#fff;
+  --border:#eadde0;
+  --shadow:0 8px 25px rgba(110,70,80,.09);
+  --shadow-hover:0 12px 30px rgba(110,70,80,.16);
+  --danger:#d9534f;
+  --danger-hover:#c9302c;
+  --success:#4cae4c;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#faf7f8;color:var(--dark)}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,"Noto Sans Thai",sans-serif;
+  background:#faf7f8;
+  color:var(--dark);
+  min-height:100vh;
+}
 button,input,textarea,select{font:inherit}
-.header{background:linear-gradient(135deg,#b9828f,#c996a2);color:#fff;padding:28px 22px}
-.header-inner{max-width:1200px;margin:auto;display:flex;justify-content:space-between;align-items:center}
-h1{margin:0 0 7px;font-size:27px}.sub{opacity:.9}
+.header{
+  background:linear-gradient(135deg,#b9828f,#c996a2);
+  color:#fff;
+  padding:24px 20px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+.header-inner{
+  max-width:1200px;
+  margin:auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:16px;
+}
+h1{margin:0 0 5px;font-size:26px;display:flex;align-items:center;gap:8px}
+.sub{opacity:.95;font-size:14px}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}
 .container{max-width:1200px;margin:22px auto;padding:0 18px}
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-.search{flex:1;min-width:240px;padding:13px 16px;border:1px solid var(--border);border-radius:13px;background:white;outline:none}
-.btn{border:0;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700}
-.btn-primary{background:var(--pink);color:#fff}.btn-light{background:#fff;border:1px solid var(--border);color:var(--dark)}
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.search-box{flex:1;min-width:260px;position:relative}
+.search{
+  width:100%;
+  padding:13px 40px 13px 16px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:white;
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.search:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(185,130,143,.2)}
+.search-clear{
+  position:absolute;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
+  background:none;
+  border:none;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:16px;
+  display:none;
+  padding:4px;
+}
+.btn{
+  border:0;
+  border-radius:12px;
+  padding:11px 16px;
+  cursor:pointer;
+  font-weight:700;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  transition:background .2s,transform .1s,opacity .2s;
+  user-select:none;
+}
+.btn:active{transform:scale(0.98)}
+.btn-primary{background:var(--pink);color:#fff}
+.btn-primary:hover{background:var(--pink-hover)}
+.btn-light{background:#fff;border:1px solid var(--border);color:var(--dark)}
+.btn-light:hover{background:#f5eef0}
 .btn-danger{background:transparent;color:var(--danger);border:1px solid var(--border)}
-.categories{display:flex;gap:8px;overflow:auto;padding-bottom:12px}
-.cat{white-space:nowrap;border:1px solid var(--border);background:#fff;padding:9px 13px;border-radius:999px;cursor:pointer}
-.cat.active{background:var(--pink);color:#fff;border-color:var(--pink)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:15px}
-.card{background:#fff;border:1px solid var(--border);border-radius:17px;padding:17px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:220px}
-.card-top{display:flex;justify-content:space-between;gap:10px}.title{font-weight:800;font-size:17px;line-height:1.4}
-.badge{font-size:12px;background:var(--pink3);color:var(--pink);padding:5px 9px;border-radius:8px;white-space:nowrap}
-.content{white-space:pre-wrap;line-height:1.65;color:#5d4b50;margin:12px 0;display:-webkit-box;-webkit-line-clamp:8;-webkit-box-orient:vertical;overflow:hidden;flex:1}
-.actions{display:flex;gap:6px;margin-top:10px}.actions button{flex:1}
-.star{background:none;border:0;font-size:21px;cursor:pointer;color:#c5a5ad}.star.on{color:#d29b2f}
-.empty{text-align:center;padding:55px 20px;color:var(--muted)}
-.modal{display:none;position:fixed;inset:0;background:rgba(55,35,40,.4);align-items:center;justify-content:center;padding:15px;z-index:10}
-.modal.show{display:flex}.modal-box{background:#fff;width:min(700px,100%);max-height:90vh;overflow:auto;border-radius:20px;padding:22px}
-label{display:block;font-weight:700;margin:12px 0 7px}input,textarea,select{width:100%;padding:12px;border:1px solid var(--border);border-radius:11px;outline:none}textarea{min-height:230px;resize:vertical}
-.modal-actions{display:flex;gap:9px;margin-top:16px}.modal-actions button{flex:1}
-.toast{position:fixed;right:20px;bottom:20px;background:#49363b;color:white;padding:12px 17px;border-radius:12px;display:none;z-index:20}
-@media(max-width:600px){h1{font-size:23px}.grid{grid-template-columns:1fr}.container{padding:0 12px}.header{padding:22px 16px}}
+.btn-danger:hover{background:#fff1f0;border-color:var(--danger)}
+.categories{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding-bottom:12px;
+  scrollbar-width:thin;
+}
+.categories::-webkit-scrollbar{height:6px}
+.categories::-webkit-scrollbar-thumb{background:var(--pink2);border-radius:999px}
+.cat{
+  white-space:nowrap;
+  border:1px solid var(--border);
+  background:#fff;
+  padding:8px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  font-size:14px;
+  transition:all .2s;
+  color:var(--dark);
+}
+.cat:hover{background:#fdf2f4;border-color:var(--pink)}
+.cat.active{background:var(--pink);color:#fff;border-color:var(--pink);font-weight:700}
+.cat-count{
+  display:inline-block;
+  background:rgba(0,0,0,.08);
+  padding:1px 6px;
+  border-radius:999px;
+  font-size:12px;
+  margin-left:4px;
+}
+.cat.active .cat-count{background:rgba(255,255,255,.25)}
+.stats-bar{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
+  gap:16px;
+}
+.card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:18px;
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-direction:column;
+  min-height:220px;
+  transition:transform .2s,box-shadow .2s;
+}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.title{font-weight:800;font-size:17px;line-height:1.4;word-break:break-word;flex:1}
+.badge{
+  font-size:12px;
+  background:var(--pink3);
+  color:var(--pink);
+  padding:4px 10px;
+  border-radius:8px;
+  display:inline-block;
+  margin-top:6px;
+  font-weight:600;
+  border:1px solid var(--pink2);
+  word-break:break-word;
+}
+.content{
+  white-space:pre-wrap;
+  line-height:1.65;
+  color:#5d4b50;
+  margin:12px 0;
+  display:-webkit-box;
+  -webkit-line-clamp:7;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  flex:1;
+  word-break:break-word;
+  overflow-wrap:break-word;
+}
+.content.expanded{
+  display:block;
+  overflow:visible;
+  -webkit-line-clamp:unset;
+}
+.expand-btn{
+  background:none;
+  border:none;
+  color:var(--pink);
+  padding:0;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  margin-bottom:8px;
+  text-align:left;
+}
+.actions{display:flex;gap:7px;margin-top:auto}
+.actions button{flex:1;padding:9px 10px;font-size:13px}
+.star{
+  background:none;
+  border:0;
+  font-size:24px;
+  line-height:1;
+  cursor:pointer;
+  color:#c5a5ad;
+  padding:2px 4px;
+  transition:transform .15s,color .15s;
+}
+.star:hover{transform:scale(1.2)}
+.star.on{color:#f59e0b}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:16px;grid-column:1/-1}
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(40,25,30,.45);
+  backdrop-filter:blur(3px);
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  z-index:100;
+}
+.modal.show{display:flex}
+.modal-box{
+  background:#fff;
+  width:min(680px,100%);
+  max-height:90vh;
+  overflow-y:auto;
+  border-radius:22px;
+  padding:24px;
+  box-shadow:0 15px 40px rgba(0,0,0,.2);
+  animation:popIn .2s ease-out;
+}
+@keyframes popIn{
+  from{transform:scale(.95);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+.modal-title{margin:0 0 16px;font-size:22px;color:var(--dark)}
+label{display:block;font-weight:700;margin:12px 0 6px;font-size:14px}
+input,textarea,select{
+  width:100%;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  outline:none;
+  background:#fff;
+  transition:border-color .2s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--pink)}
+textarea{min-height:180px;resize:vertical;line-height:1.5}
+.custom-category-wrap{margin-top:8px;display:none}
+.github-sync-option{
+  margin-top:14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  color:var(--muted);
+  cursor:pointer;
+}
+.github-sync-option input{width:auto;cursor:pointer}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.modal-actions button{flex:1;padding:12px}
+.toast{
+  position:fixed;
+  right:20px;
+  bottom:24px;
+  background:rgba(55,35,40,.95);
+  color:white;
+  padding:13px 20px;
+  border-radius:14px;
+  display:none;
+  z-index:200;
+  font-weight:600;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+  pointer-events:none;
+  animation:toastIn .2s ease-out;
+}
+@keyframes toastIn{
+  from{transform:translateY(15px);opacity:0}
+  to{transform:translateY(0);opacity:1}
+}
+@media(max-width:600px){
+  h1{font-size:22px}
+  .grid{grid-template-columns:1fr}
+  .container{padding:0 12px}
+  .header{padding:18px 14px}
+  .header-actions{width:100%}
+  .header-actions button{flex:1}
+}
 </style>
 </head>
 <body>
+
 <header class="header">
- <div class="header-inner">
- <div>
- <h1>💗 Bugfinn Pattern Manager</h1>
- <div class="sub">คลังข้อความสำหรับงานแอดมิน • ค้นหาและคัดลอกไปใช้ในแชทได้ทันที</div>
- </div>
- <button class="btn btn-light" style="font-size:12px" onclick="resetData()">↺ รีเซ็ตข้อมูล</button>
- </div>
+  <div class="header-inner">
+    <div>
+      <h1>💗 Bugfinn Pattern Manager</h1>
+      <div class="sub">คลังข้อความสำหรับงานแอดมิน • ค้นหาและคัดลอกไปใช้ในแชทได้ทันที</div>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-light" style="font-size:12px" id="exportBtn">📥 ส่งออก (Export)</button>
+      <button type="button" class="btn btn-light" style="font-size:12px" id="importBtn">📤 นำเข้า (Import)</button>
+      <input type="file" id="importFileInput" accept=".json" style="display:none">
+      <button type="button" class="btn btn-light" style="font-size:12px" id="resetBtn">↺ รีเซ็ตข้อมูล</button>
+    </div>
+  </div>
 </header>
 
-
 <main class="container">
-<div class="toolbar">
-<input id="search" class="search" placeholder="🔍 ค้นหา เช่น ดาวน์, NPL, iPhone, เอกสาร...">
-<button type="button" id="addPatternBtn" class="btn btn-primary">＋ เพิ่ม Pattern</button>
-</div>
-<div id="cats" class="categories"></div>
-<div id="grid" class="grid"></div>
+  <div class="toolbar">
+    <div class="search-box">
+      <input id="search" class="search" placeholder="🔍 ค้นหา เช่น ดาวน์, NPL, iPhone, เอกสาร..." autocomplete="off">
+      <button type="button" id="searchClear" class="search-clear" title="ล้างการค้นหา">✕</button>
+    </div>
+    <button type="button" id="addPatternBtn" class="btn btn-primary">＋ เพิ่ม Pattern</button>
+  </div>
+
+  <div id="cats" class="categories"></div>
+  <div class="stats-bar">
+    <span id="statsCount">กำลังโหลด...</span>
+  </div>
+  <div id="grid" class="grid"></div>
 </main>
 
-
+<!-- Modal เพิ่ม/แก้ไข Pattern -->
 <div id="modal" class="modal">
-<div class="modal-box">
-<h2 id="modalTitle">เพิ่ม Pattern</h2>
-<input type="hidden" id="editId">
-<label>ชื่อ Pattern</label><input id="name" placeholder="เช่น แจ้งลูกค้าเครดิตผ่าน">
-<label>หมวดหมู่</label>
-<select id="category"></select>
-<label>ข้อความ Pattern</label><textarea id="content" placeholder="ใส่ข้อความที่ต้องการคัดลอก..."></textarea>
-<div class="modal-actions"><button type="button" id="cancelModalBtn" class="btn btn-light">ยกเลิก</button><button type="button" id="savePatternBtn" class="btn btn-primary">บันทึก</button></div>
-</div></div>
-<div id="toast" class="toast">คัดลอกแล้ว ✓</div>
+  <div class="modal-box">
+    <h2 id="modalTitle" class="modal-title">เพิ่ม Pattern</h2>
+    <input type="hidden" id="editId">
+    
+    <label for="name">ชื่อ Pattern</label>
+    <input id="name" placeholder="เช่น แจ้งลูกค้าเครดิตผ่าน" required autocomplete="off">
 
+    <label for="category">หมวดหมู่</label>
+    <select id="category"></select>
+    
+    <div id="customCategoryWrap" class="custom-category-wrap">
+      <input id="customCategory" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่ที่นี่..." autocomplete="off">
+    </div>
+
+    <label for="content">ข้อความ Pattern</label>
+    <textarea id="content" placeholder="ใส่ข้อความที่ต้องการคัดลอก..."></textarea>
+
+    <label class="github-sync-option" id="githubOptionLabel">
+      <input type="checkbox" id="sendToGithub">
+      <span>ส่งต่อไปยัง GitHub Issues ด้วย (เปิดหน้าต่างใหม่)</span>
+    </label>
+
+    <div class="modal-actions">
+      <button type="button" id="cancelModalBtn" class="btn btn-light">ยกเลิก</button>
+      <button type="button" id="savePatternBtn" class="btn btn-primary">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">คัดลอกแล้ว ✓</div>
 
 <script>
 const defaultCategories = [
- "🔍 ตรวจสอบเครดิต", "✅ เครดิตผ่าน", "❌ ไม่อนุมัติ", "💰 ดาวน์", 
- "📱 iPhone 18 Series", "📝 เอกสาร", "🖊️ ขั้นตอนทำสัญญา", "💸 โอนยอด", 
- "🔧 เครื่องมือ 1", "📦 เครื่องนอก", "💳 ค่าบริการ", "👋 ข้อความทั่วไป", "📌 อื่น ๆ"
+  "🔍 ตรวจสอบเครดิต", "✅ เครดิตผ่าน", "❌ ไม่อนุมัติ", "💰 ดาวน์", 
+  "📱 iPhone 18 Series", "📝 เอกสาร", "🖊️ ขั้นตอนทำสัญญา", "💸 โอนยอด", 
+  "🔧 เครื่องมือ 1", "📦 เครื่องนอก", "💳 ค่าบริการ", "👋 ข้อความทั่วไป", "📌 อื่น ๆ"
 ];
 
-
-const initial=[
-["ขอข้อมูลตรวจสอบเครดิต","🔍 ตรวจสอบเครดิต","เพื่อดำเนินการตรวจสอบเครดิต ขอทราบข้อมูลดังนี้\n- อาชีพ\n- รุ่นที่ลูกค้าสนใจทำผ่อน\n- ราคาเครื่อง\n- จำนวนเงินดาวน์"],
-["แจ้งเครดิตผ่าน","✅ เครดิตผ่าน","เบื้องต้นเครดิตลูกค้าผ่านค่ะ\n\nหากลูกค้าทำสัญญาต่อ หน้าร้านสร้างลิ้งค์ให้ลูกค้ากรอกข้อมูลและเพิ่มข้อมูลเครื่องเข้าระบบได้เลยนะคะ"],
-["ไม่อนุมัติ NPL","❌ ไม่อนุมัติ","📌 แจ้งผลตรวจสอบเคสค่ะ\nเบื้องต้นบริษัทไม่สามารถอนุมัติสินเชื่อให้ลูกค้าได้ค่ะ\n\nสาเหตุ: ลูกค้ามีสถานะ NPL / มีบัญชีค้างชำระอยู่ระหว่างติดตาม จึงไม่ผ่านเกณฑ์สินเชื่อค่ะ"],
-["ไม่อนุมัติ Blacklist Seller","❌ ไม่อนุมัติ","เคสนี้แอดมินได้ตรวจสอบดูแล้ว ยังไม่สามารถปล่อยเครดิตให้ได้นะคะ เนื่องจากลูกค้ามีการติดแบล็คลิสต์เซลล์เลอร์ ต้องขออภัยด้วยค่ะ🙏"],
-["แจ้งดาวน์ 35%","💰 ดาวน์","แอดมินพิจารณาตามหลักฐานที่มีค่ะพี่ ตามเงื่อนไขของบริษัทนะคะ หากลูกค้าสะดวกดาวน์ 35% แจ้งได้เลยนะคะ"],
-["iPhone 18 Pro Max 256GB","📱 iPhone 18 Series","📱 iPhone 18 Pro Max 256GB\nราคาอ้างอิง 52,900 บาท\n• OVP ได้ประมาณ 5,000 บาท"],
-["iPhone 18 Pro 256GB","📱 iPhone 18 Series","📱 iPhone 18 Pro 256GB\nราคาอ้างอิง 48,900 บาท\n• OVP ได้ประมาณ 3,000 บาท"],
-["เงื่อนไข iPhone 18 Series","📱 iPhone 18 Series","💰 วางดาวน์เริ่มต้น 30%\nกรณีไม่สะดวก/ไม่มีเอกสาร: วางเงินดาวน์ 40%"],
-["แนวทางแจ้งร้านค้า iPhone 18","📱 iPhone 18 Series","📌 แนวทางแจ้งร้านค้า iPhone 18 Series\n\nแจ้งเฉพาะ วางดาวน์เริ่มต้น 30% ไม่ต้องแจ้งวงเงิน OVP และให้ถามราคาขายของร้านก่อน\n\n• ราคาไม่เกินเกณฑ์ → แจ้งว่าจัดได้\n• ราคาเกินเกณฑ์ → แจ้งราคาสูงสุดที่จัดได้"],
-["แจ้งยอดโอนรอบถัดไป","💸 โอนยอด","แอดมินขอแจ้งให้ทราบเบื้องต้นก่อนนะคะพี่ เนื่องจากวันนี้ยอดโอนปิดงานเต็มแล้วค่ะ หากเคสนี้เครดิตผ่านและทางร้านดำเนินการต่อ ร้านจะได้รับยอดเป็นรอบของวันที่ 04/11/2569 นะคะ ทางร้านสะดวกไหมคะ"],
-["แจ้งยอดโอนรอบวันที่ 17 กย. 69","💸 โอนยอด","แอดมินขอแจ้งให้ทราบเพิ่มเติมนะคะพี่ เนื่องจากวันนี้ยอดโอนปิดงานเต็มแล้วค่ะ ร้านจะได้รับยอดเป็นรอบของวันที่ 17 กย. 69 นะคะ ทางร้านสะดวกไหมคะ"],
-["เอกสารเรียบร้อย / แจ้งวันโอน","💸 โอนยอด","BUG0000*** เอกสารเรียบร้อยค่ะพี่ ส่วนอนุมัติสัญญาและโอนยอดจะเป็นวันที่ 19/09/2569 ขอบพระคุณค่ะ"],
-["หมายเหตุ เครื่องมือ 1","🔧 เครื่องมือ 1","📌 หมายเหตุ (เครื่องมือ 1):\n• ร้านต้องเก็บกล่องเครื่องมือหนึ่งไว้ให้ลูกค้า\n• เมื่อลูกค้าผ่อนหมดให้มารับที่ร้านค้า"],
-["Statement ไม่สัมพันธ์กับค่างวด","💰 ดาวน์","แอดมินตรวจสอบแล้ว statement ลูกค้ายังไม่สัมพันธ์กับค่างวดค่ะ ลูกค้าสะดวกดาวน์ 35% ไหมคะ"],
-["อายุไม่ถึง 20 ปี","📝 เอกสาร","ในกรณีที่อายุไม่ถึง 20 ปีบริบูรณ์จะต้องมีผู้ปกครองเป็นผู้เซ็นยินยอมนะคะ"],
-["ขอภาพการทำงาน","📝 เอกสาร","ลูกค้ามีภาพการทำงานหรือหลักฐานการทำงานไหมคะ ส่งเข้ามาในแชทได้เลยนะคะ"],
-["ขอภาพการทำงาน (แบบสุภาพ)","📝 เอกสาร","ลูกค้ามีภาพการทำงาน หรือ หลักฐานการทำงานไหมคะ ส่งเข้ามาในแชทได้เลยค่ะ"],
-["เครื่องนอกผ่อนสูงสุด 9 เดือน","📦 เครื่องนอก","ขออนุญาตแจ้งเพิ่มเติมนะคะ เครื่องนอกผ่อนสูงสุด 9 เดือนค่ะ"],
-["เพิ่มเพื่อนไฟแนนซ์","🖊️ ขั้นตอนทำสัญญา","รบกวนแจ้งลูกค้าเพิ่มเพื่อนไฟแนนซ์เข้ามาหน่อยนะคะ\n\nhttps://www.facebook.com/profile.php?id=61594188324871"],
-["ข้อความต้อนรับ","👋 ข้อความทั่วไป","สวัสดีค่ะ Bugfinn Finance ยินดีให้บริการค่ะ🧡"],
-["ไม่อนุมัติ NPL (อีกแบบ)","❌ ไม่อนุมัติ","เคสนี้แอดมินตรวจสอบแล้วยังไม่สามารถปล่อยเครดิตให้ได้นะคะ เนื่องจากลูกค้ามีประวัติการค้างชำระค่างวด (สถานะ NPL) ต้องขออภัยในความไม่สะดวกด้วยค่ะ"],
-["ส่วนลดปิดก่อนกำหนด","💳 ค่าบริการ","ปิดก่อนงวดที่ 1 ลด 20%\nปิดก่อนงวดที่ 2 ลด 15%\nปิดตั้งแต่งวดที่ 3 ขึ้นไปลด 10% ค่ะ"],
-["ขั้นตอนหลังตรวจสอบผ่าน","🖊️ ขั้นตอนทำสัญญา","หากดำเนินการขั้นตอนนี้เรียบร้อยแล้ว หน้าร้านสามารถดำเนินการต่อได้ด้วยตัวเองตามขั้นตอนที่แอดมินส่งให้ได้เลยนะคะ จะเป็นขั้นตอนการสร้างลิงค์ เซ็นสัญญาและยืนยันการรับสินค้าค่ะ"],
-["ไม่สามารถตรวจสอบ / ดาวน์ 35%","💰 ดาวน์","เนื่องจากแอดมินไม่สามารถตรวจสอบได้ ตามเงื่อนไขของบริษัทต้องวางดาวน์ 35% เพื่อดำเนินการต่อนะคะ"],
-["เปลี่ยนรอบชำระ","💳 ค่าบริการ","เปลี่ยนรอบชำระ ค่าบริการ 300 บาท\n\nช่องทางโอนเงิน\nธนาคารกรุงไทย\nเลขบัญชี 6630313410\nชื่อบัญชี อรรถพล บุตรพรม\n\nหากโอนแล้วส่งสลิปให้ทางแอดมินตรวจสอบได้เลยค่ะ"],
-["ขอปลดล็อกเครื่อง","💳 ค่าบริการ","เรื่อง: แจ้งขอปลดล็อกเครื่อง - ลูกค้าต้องการเปลี่ยนเครื่อง\nเลขที่สัญญา: BUG0000782\nชื่อ-สกุล: วรวุฒิ ศรีประเสริฐ\nSerial Number: QK2Q5W75V9\n\n📌 ร้านเพียวโมบาย ได้โอนเงินให้บริษัทแล้ว\nค่าบริการปลดออกจากระบบ 150 = รวม 150 บาท\nตรวจสอบสลิปโอนเรียบร้อยค่ะ @! Boommm"],
-["ขอชื่อ-นามสกุล","📝 เอกสาร","รบกวนขอชื่อ - นามสกุลของลูกค้าเพิ่มเติมหน่อยนะคะ"],["ขอเอกสารเพิ่มเติม","📝 เอกสาร","📍 แอดมินรบกวนขอเอกสารเพิ่มเติมนะคะ\n\n📂 เลือกส่งเพียง 1 อย่าง:\n\n✅ 1. สลิปเงินเดือน (3 เดือนย้อนหลัง)\n✅ 2. สเตทเมนต์ธนาคาร (3 เดือนย้อนหลัง)\n\n💡 หมายเหตุ: หากลูกค้าไม่สะดวกเรื่องเอกสาร จะต้องปรับเป็น วางเงินดาวน์ 35% เพื่อรับเครื่องค่ะ"],
-["เครื่องราคาสูง","💰 ดาวน์","📍เนื่องจากเป็นสินค้ามูลค่าสูง เงื่อนไขบริษัทจะต้องมี เอกสารรายได้ประกอบการส่งเคสทุกครั้ง ค่ะ\n\nเลือกส่งเพียง 1 อย่าง:\n\n✅ 1. สลิปเงินเดือน (3 เดือนย้อนหลัง)\n✅ 2. สเตทเมนต์ธนาคาร (3 เดือนย้อนหลัง)\n\n⚠️ กรณีไม่สะดวก/ไม่มีเอกสาร: จะต้องปรับเป็น วางเงินดาวน์ 35% เพื่ออนุมัติรับเครื่องค่ะ"],
-["iPhone 18 Series — ดาวน์เริ่มต้น 30%","📱 iPhone 18 Series","📢 แจ้งเงื่อนไขผ่อน iPhone 18 Series\n\n📱 ดาวน์เริ่มต้น 30%\n📆 ผ่อนสูงสุด 15 งวด\n\n📌 เงื่อนไขสำคัญ\nทุกเคสต้องแนบ เอกสารแสดงรายได้ ประกอบการส่งเคส โดยเลือกส่งเพียง 1 อย่าง ดังนี้\n\n✅ 1. สลิปเงินเดือนย้อนหลัง 3 เดือน\n✅ 2. สเตทเมนต์ธนาคารย้อนหลัง 3 เดือน\n\n⚠️ กรณีไม่มีหรือไม่สะดวกส่งเอกสารรายได้\nจะต้องปรับเป็น ดาวน์ 40% เพื่อดำเนินการอนุมัติรับเครื่องค่ะ"]
-].map((x,i)=>({id:"p"+i,name:x[0],category:x[1],content:x[2],fav:false}));
-
+const initial = [
+  ["ขอข้อมูลตรวจสอบเครดิต","🔍 ตรวจสอบเครดิต","เพื่อดำเนินการตรวจสอบเครดิต ขอทราบข้อมูลดังนี้\n- อาชีพ\n- รุ่นที่ลูกค้าสนใจทำผ่อน\n- ราคาเครื่อง\n- จำนวนเงินดาวน์"],
+  ["แจ้งเครดิตผ่าน","✅ เครดิตผ่าน","เบื้องต้นเครดิตลูกค้าผ่านค่ะ\n\nหากลูกค้าทำสัญญาต่อ หน้าร้านสร้างลิ้งค์ให้ลูกค้ากรอกข้อมูลและเพิ่มข้อมูลเครื่องเข้าระบบได้เลยนะคะ"],
+  ["ไม่อนุมัติ NPL","❌ ไม่อนุมัติ","📌 แจ้งผลตรวจสอบเคสค่ะ\nเบื้องต้นบริษัทไม่สามารถอนุมัติสินเชื่อให้ลูกค้าได้ค่ะ\n\nสาเหตุ: ลูกค้ามีสถานะ NPL / มีบัญชีค้างชำระอยู่ระหว่างติดตาม จึงไม่ผ่านเกณฑ์สินเชื่อค่ะ"],
+  ["ไม่อนุมัติ Blacklist Seller","❌ ไม่อนุมัติ","เคสนี้แอดมินได้ตรวจสอบดูแล้ว ยังไม่สามารถปล่อยเครดิตให้ได้นะคะ เนื่องจากลูกค้ามีการติดแบล็คลิสต์เซลล์เลอร์ ต้องขออภัยด้วยค่ะ🙏"],
+  ["แจ้งดาวน์ 35%","💰 ดาวน์","แอดมินพิจารณาตามหลักฐานที่มีค่ะพี่ ตามเงื่อนไขของบริษัทนะคะ หากลูกค้าสะดวกดาวน์ 35% แจ้งได้เลยนะคะ"],
+  ["iPhone 18 Pro Max 256GB","📱 iPhone 18 Series","📱 iPhone 18 Pro Max 256GB\nราคาอ้างอิง 52,900 บาท\n• OVP ได้ประมาณ 5,000 บาท"],
+  ["iPhone 18 Pro 256GB","📱 iPhone 18 Series","📱 iPhone 18 Pro 256GB\nราคาอ้างอิง 48,900 บาท\n• OVP ได้ประมาณ 3,000 บาท"],
+  ["เงื่อนไข iPhone 18 Series","📱 iPhone 18 Series","💰 วางดาวน์เริ่มต้น 30%\nกรณีไม่สะดวก/ไม่มีเอกสาร: วางเงินดาวน์ 40%"],
+  ["แนวทางแจ้งร้านค้า iPhone 18","📱 iPhone 18 Series","📌 แนวทางแจ้งร้านค้า iPhone 18 Series\n\nแจ้งเฉพาะ วางดาวน์เริ่มต้น 30% ไม่ต้องแจ้งวงเงิน OVP และให้ถามราคาขายของร้านก่อน\n\n• ราคาไม่เกินเกณฑ์ → แจ้งว่าจัดได้\n• ราคาเกินเกณฑ์ → แจ้งราคาสูงสุดที่จัดได้"],
+  ["แจ้งยอดโอนรอบถัดไป","💸 โอนยอด","แอดมินขอแจ้งให้ทราบเบื้องต้นก่อนนะคะพี่ เนื่องจากวันนี้ยอดโอนปิดงานเต็มแล้วค่ะ หากเคสนี้เครดิตผ่านและทางร้านดำเนินการต่อ ร้านจะได้รับยอดเป็นรอบของวันที่ 04/11/2569 นะคะ ทางร้านสะดวกไหมคะ"],
+  ["แจ้งยอดโอนรอบวันที่ 17 กย. 69","💸 โอนยอด","แอดมินขอแจ้งให้ทราบเพิ่มเติมนะคะพี่ เนื่องจากวันนี้ยอดโอนปิดงานเต็มแล้วค่ะ ร้านจะได้รับยอดเป็นรอบของวันที่ 17 กย. 69 นะคะ ทางร้านสะดวกไหมคะ"],
+  ["เอกสารเรียบร้อย / แจ้งวันโอน","💸 โอนยอด","BUG0000*** เอกสารเรียบร้อยค่ะพี่ ส่วนอนุมัติสัญญาและโอนยอดจะเป็นวันที่ 19/09/2569 ขอบพระคุณค่ะ"],
+  ["หมายเหตุ เครื่องมือ 1","🔧 เครื่องมือ 1","📌 หมายเหตุ (เครื่องมือ 1):\n• ร้านต้องเก็บกล่องเครื่องมือหนึ่งไว้ให้ลูกค้า\n• เมื่อลูกค้าผ่อนหมดให้มารับที่ร้านค้า"],
+  ["Statement ไม่สัมพันธ์กับค่างวด","💰 ดาวน์","แอดมินตรวจสอบแล้ว statement ลูกค้ายังไม่สัมพันธ์กับค่างวดค่ะ ลูกค้าสะดวกดาวน์ 35% ไหมคะ"],
+  ["อายุไม่ถึง 20 ปี","📝 เอกสาร","ในกรณีที่อายุไม่ถึง 20 ปีบริบูรณ์จะต้องมีผู้ปกครองเป็นผู้เซ็นยินยอมนะคะ"],
+  ["ขอภาพการทำงาน","📝 เอกสาร","ลูกค้ามีภาพการทำงานหรือหลักฐานการทำงานไหมคะ ส่งเข้ามาในแชทได้เลยนะคะ"],
+  ["ขอภาพการทำงาน (แบบสุภาพ)","📝 เอกสาร","ลูกค้ามีภาพการทำงาน หรือ หลักฐานการทำงานไหมคะ ส่งเข้ามาในแชทได้เลยค่ะ"],
+  ["เครื่องนอกผ่อนสูงสุด 9 เดือน","📦 เครื่องนอก","ขออนุญาตแจ้งเพิ่มเติมนะคะ เครื่องนอกผ่อนสูงสุด 9 เดือนค่ะ"],
+  ["เพิ่มเพื่อนไฟแนนซ์","🖊️ ขั้นตอนทำสัญญา","รบกวนแจ้งลูกค้าเพิ่มเพื่อนไฟแนนซ์เข้ามาหน่อยนะคะ\n\nhttps://www.facebook.com/profile.php?id=61594188324871"],
+  ["ข้อความต้อนรับ","👋 ข้อความทั่วไป","สวัสดีค่ะ Bugfinn Finance ยินดีให้บริการค่ะ🧡"],
+  ["ไม่อนุมัติ NPL (อีกแบบ)","❌ ไม่อนุมัติ","เคสนี้แอดมินตรวจสอบแล้วยังไม่สามารถปล่อยเครดิตให้ได้นะคะ เนื่องจากลูกค้ามีประวัติการค้างชำระค่างวด (สถานะ NPL) ต้องขออภัยในความไม่สะดวกด้วยค่ะ"],
+  ["ส่วนลดปิดก่อนกำหนด","💳 ค่าบริการ","ปิดก่อนงวดที่ 1 ลด 20%\nปิดก่อนงวดที่ 2 ลด 15%\nปิดตั้งแต่งวดที่ 3 ขึ้นไปลด 10% ค่ะ"],
+  ["ขั้นตอนหลังตรวจสอบผ่าน","🖊️ ขั้นตอนทำสัญญา","หากดำเนินการขั้นตอนนี้เรียบร้อยแล้ว หน้าร้านสามารถดำเนินการต่อได้ด้วยตัวเองตามขั้นตอนที่แอดมินส่งให้ได้เลยนะคะ จะเป็นขั้นตอนการสร้างลิงค์ เซ็นสัญญาและยืนยันการรับสินค้าค่ะ"],
+  ["ไม่สามารถตรวจสอบ / ดาวน์ 35%","💰 ดาวน์","เนื่องจากแอดมินไม่สามารถตรวจสอบได้ ตามเงื่อนไขของบริษัทต้องวางดาวน์ 35% เพื่อดำเนินการต่อนะคะ"],
+  ["เปลี่ยนรอบชำระ","💳 ค่าบริการ","เปลี่ยนรอบชำระ ค่าบริการ 300 บาท\n\nช่องทางโอนเงิน\nธนาคารกรุงไทย\nเลขบัญชี 6630313410\nชื่อบัญชี อรรถพล บุตรพรม\n\nหากโอนแล้วส่งสลิปให้ทางแอดมินตรวจสอบได้เลยค่ะ"],
+  ["ขอปลดล็อกเครื่อง","💳 ค่าบริการ","เรื่อง: แจ้งขอปลดล็อกเครื่อง - ลูกค้าต้องการเปลี่ยนเครื่อง\nเลขที่สัญญา: BUG0000782\nชื่อ-สกุล: วรวุฒิ ศรีประเสริฐ\nSerial Number: QK2Q5W75V9\n\n📌 ร้านเพียวโมบาย ได้โอนเงินให้บริษัทแล้ว\nค่าบริการปลดออกจากระบบ 150 = รวม 150 บาท\nตรวจสอบสลิปโอนเรียบร้อยค่ะ @! Boommm"],
+  ["ขอชื่อ-นามสกุล","📝 เอกสาร","รบกวนขอชื่อ - นามสกุลของลูกค้าเพิ่มเติมหน่อยนะคะ"],
+  ["ขอเอกสารเพิ่มเติม","📝 เอกสาร","📍 แอดมินรบกวนขอเอกสารเพิ่มเติมนะคะ\n\n📂 เลือกส่งเพียง 1 อย่าง:\n\n✅ 1. สลิปเงินเดือน (3 เดือนย้อนหลัง)\n✅ 2. สเตทเมนต์ธนาคาร (3 เดือนย้อนหลัง)\n\n💡 หมายเหตุ: หากลูกค้าไม่สะดวกเรื่องเอกสาร จะต้องปรับเป็น วางเงินดาวน์ 35% เพื่อรับเครื่องค่ะ"],
+  ["เครื่องราคาสูง","💰 ดาวน์","📍เนื่องจากเป็นสินค้ามูลค่าสูง เงื่อนไขบริษัทจะต้องมี เอกสารรายได้ประกอบการส่งเคสทุกครั้ง ค่ะ\n\nเลือกส่งเพียง 1 อย่าง:\n\n✅ 1. สลิปเงินเดือน (3 เดือนย้อนหลัง)\n✅ 2. สเตทเมนต์ธนาคาร (3 เดือนย้อนหลัง)\n\n⚠️ กรณีไม่สะดวก/ไม่มีเอกสาร: จะต้องปรับเป็น วางเงินดาวน์ 35% เพื่ออนุมัติรับเครื่องค่ะ"],
+  ["iPhone 18 Series — ดาวน์เริ่มต้น 30%","📱 iPhone 18 Series","📢 แจ้งเงื่อนไขผ่อน iPhone 18 Series\n\n📱 ดาวน์เริ่มต้น 30%\n📆 ผ่อนสูงสุด 15 งวด\n\n📌 เงื่อนไขสำคัญ\nทุกเคสต้องแนบ เอกสารแสดงรายได้ ประกอบการส่งเคส โดยเลือกส่งเพียง 1 อย่าง ดังนี้\n\n✅ 1. สลิปเงินเดือนย้อนหลัง 3 เดือน\n✅ 2. สเตทเมนต์ธนาคารย้อนหลัง 3 เดือน\n\n⚠️ กรณีไม่มีหรือไม่สะดวกส่งเอกสารรายได้\nจะต้องปรับเป็น ดาวน์ 40% เพื่อดำเนินการอนุมัติรับเครื่องค่ะ"]
+].map((x, i) => ({ id: "p" + i, name: x[0], category: x[1], content: x[2], fav: false }));
 
 let data = [];
-let active="ทั้งหมด";
-const $=id=>document.getElementById(id);
- async function loadPatterns(){
-  try{
-    const response = await fetch("patterns.json?v=" + Date.now());
-    if(!response.ok) throw new Error("โหลด patterns.json ไม่สำเร็จ");
-    const serverData = await response.json();
-    const favoriteIds = JSON.parse(localStorage.getItem("bugfinn_favorites") || "[]");
-    const localPatterns = JSON.parse(localStorage.getItem("bugfinn_patterns") || "null");
-    if(Array.isArray(localPatterns)){
-      data = localPatterns;
-    }else{
-      data = serverData.map(x => ({...x, fav: favoriteIds.includes(x.id)}));
-    }
-  }catch(error){
-    console.warn("ใช้ข้อมูลเริ่มต้นแทน patterns.json", error);
-    const favoriteIds = JSON.parse(localStorage.getItem("bugfinn_favorites") || "[]");
-    const localPatterns = JSON.parse(localStorage.getItem("bugfinn_patterns") || "null");
-    data = Array.isArray(localPatterns) ? localPatterns : initial.map(x => ({...x, fav: favoriteIds.includes(x.id)}));
-  }
-  render();
+let active = "ทั้งหมด";
+let toastTimer = null;
+const $ = id => document.getElementById(id);
+
+function esc(s){
+  if(s === null || s === undefined) return "";
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[m]));
 }
 
-
-function saveLocal(){
-  localStorage.setItem("bugfinn_patterns", JSON.stringify(data));
- async function loadPatterns(){
-  try{
-    const response = await fetch(
-      "./patterns.json?v=" + Date.now(),
-      {
-        cache: "no-store"
-      }
-    );
-
-    if(!response.ok){
-      throw new Error("โหลด patterns.json ไม่สำเร็จ");
-    }
-
-    const remoteData = await response.json();
-
-    const localData =
-      JSON.parse(
-        localStorage.getItem("bugfinn_patterns") || "[]"
-      );
-
-    const favoriteMap = {};
-
-    localData.forEach(x => {
-      if(x.fav){
-        favoriteMap[x.id] = true;
-      }
-    });
-
-    data = remoteData.map(x => ({
-      ...x,
-      fav: favoriteMap[x.id] ?? x.fav ?? false
-    }));
-
-    render();
-
-  }catch(error){
-    console.error(
-      "โหลด patterns.json ไม่สำเร็จ:",
-      error
-    );
-
-    data =
-      JSON.parse(
-        localStorage.getItem("bugfinn_patterns") || "null"
-      ) || initial;
-
-    render();
-  }
-
-
-  localStorage.setItem("bugfinn_favorites", JSON.stringify(data.filter(x=>x.fav).map(x=>x.id)));
-}
-
-
-function populateCategorySelect(){
- const cats = Array.from(new Set([...defaultCategories, ...data.map(x=>x.category)]));
- $("category").innerHTML = cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
-}
-
-
-function categories(){
- const cats=["ทั้งหมด", "⭐ รายการโปรด", ...new Set([...defaultCategories, ...data.map(x=>x.category)])];
- $("cats").innerHTML=cats.map(c=>`<button class="cat ${c===active?'active':''}" onclick="setCat(${JSON.stringify(c)})">${c}</button>`).join("");
-}
-
-
-function setCat(c){active=c;render()}
-
-
-function render(){
- categories();
- populateCategorySelect();
- const q=$("search").value.toLowerCase().trim();
- const list=data.filter(x=>{
- const matchCat = active==="ทั้งหมด" ? true : (active==="⭐ รายการโปรด" ? x.fav : x.category===active);
- const matchSearch = !q || (x.name+" "+x.category+" "+x.content).toLowerCase().includes(q);
- return matchCat && matchSearch;
- });
-
-
- $("grid").innerHTML=list.length?list.map(x=>`
-  <article class="card">
-    <div class="card-top"><div class="title">${esc(x.name)}</div><button class="star ${x.fav?'on':''}" onclick="toggleFav('${x.id}')">${x.fav?'★':'☆'}</button></div>
-    <div><span class="badge">${esc(x.category)}</span></div>
-    <div class="content">${esc(x.content)}</div>
-    <div class="actions">
-      <button class="btn btn-primary" onclick="copyText('${x.id}')">📋 คัดลอก</button>
-      <button class="btn btn-light" onclick="editPattern('${x.id}')">✏️ แก้ไข</button>
-      <button class="btn btn-danger" onclick="deletePattern('${x.id}')">🗑️ลบ</button>
-    </div>
-  </article>`).join(""):`<div class="empty">ไม่พบ Pattern ที่ค้นหา</div>`;
-}
-
-
-function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-
-
-async function copyText(id){
- const x=data.find(a=>a.id===id);
- try{await navigator.clipboard.writeText(x.content)}catch(e){const t=document.createElement("textarea");t.value=x.content;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove()}
- $("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",1400)
-}
-
-
- function showToast(message){
+function showToast(message){
   const toast = $("toast");
-
   if(!toast) return;
-
   toast.textContent = message;
   toast.style.display = "block";
-
-  setTimeout(() => {
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
     toast.style.display = "none";
   }, 1800);
 }
 
+function saveLocal(){
+  localStorage.setItem("bugfinn_patterns", JSON.stringify(data));
+  const favIds = data.filter(x => x.fav).map(x => x.id);
+  localStorage.setItem("bugfinn_favorites", JSON.stringify(favIds));
+}
+
+async function loadPatterns(){
+  let favoriteIds = [];
+  try{
+    favoriteIds = JSON.parse(localStorage.getItem("bugfinn_favorites") || "[]");
+    if(!Array.isArray(favoriteIds)) favoriteIds = [];
+  }catch(e){
+    favoriteIds = [];
+  }
+
+  // 1. ตรวจสอบข้อมูลใน LocalStorage ก่อน
+  const localRaw = localStorage.getItem("bugfinn_patterns");
+  if(localRaw !== null){
+    try{
+      const parsed = JSON.parse(localRaw);
+      if(Array.isArray(parsed) && parsed.length > 0){
+        data = parsed.map(x => ({
+          ...x,
+          fav: !!x.fav || favoriteIds.includes(x.id)
+        }));
+        render();
+        return;
+      }
+    }catch(e){
+      console.warn("ไม่สามารถแปลงข้อมูล local patterns ได้:", e);
+    }
+  }
+
+  // 2. ถ้าไม่มีใน LocalStorage ลองโหลดจาก patterns.json (กรณีรันบนเว็บเซิร์ฟเวอร์)
+  try{
+    const response = await fetch("./patterns.json?v=" + Date.now(), { cache: "no-store" });
+    if(response.ok){
+      const serverData = await response.json();
+      if(Array.isArray(serverData) && serverData.length > 0){
+        data = serverData.map(x => ({
+          ...x,
+          fav: !!x.fav || favoriteIds.includes(x.id)
+        }));
+        saveLocal();
+        render();
+        return;
+      }
+    }
+  }catch(err){
+    // เมื่อเปิดแบบ file:// หรือยังไม่มี patterns.json ให้ทำงานต่อตามปกติ
+  }
+
+  // 3. ใช้ข้อมูลค่าเริ่มต้น initial
+  data = initial.map(x => ({
+    ...x,
+    fav: favoriteIds.includes(x.id)
+  }));
+  saveLocal();
+  render();
+}
+
+function getAllCategories(){
+  const customCats = data.map(x => x.category).filter(Boolean);
+  return Array.from(new Set([...defaultCategories, ...customCats]));
+}
+
+function populateCategorySelect(selectedVal = ""){
+  const select = $("category");
+  const cats = getAllCategories();
+  
+  let optionsHtml = cats.map(c => 
+    `<option value="${esc(c)}">${esc(c)}</option>`
+  ).join("");
+  
+  optionsHtml += `<option value="__custom__">➕ พิมพ์หมวดหมู่ใหม่...</option>`;
+  select.innerHTML = optionsHtml;
+
+  const customWrap = $("customCategoryWrap");
+  const customInput = $("customCategory");
+
+  if(selectedVal && cats.includes(selectedVal)){
+    select.value = selectedVal;
+    customWrap.style.display = "none";
+    customInput.value = "";
+  }else if(selectedVal){
+    select.value = "__custom__";
+    customWrap.style.display = "block";
+    customInput.value = selectedVal;
+  }else{
+    select.selectedIndex = 0;
+    customWrap.style.display = "none";
+    customInput.value = "";
+  }
+}
+
+function categories(){
+  const catsContainer = $("cats");
+  const allCats = getAllCategories();
+  
+  // นับจำนวนรายการในแต่ละหมวดหมู่
+  const counts = { "ทั้งหมด": data.length };
+  counts["⭐ รายการโปรด"] = data.filter(x => x.fav).length;
+  
+  allCats.forEach(c => {
+    counts[c] = data.filter(x => x.category === c).length;
+  });
+
+  const catList = ["ทั้งหมด", "⭐ รายการโปรด", ...allCats];
+
+  catsContainer.innerHTML = catList.map(c => {
+    const isActive = (c === active);
+    const count = counts[c] !== undefined ? counts[c] : 0;
+    return `<button type="button" class="cat ${isActive ? 'active' : ''}" data-cat="${esc(c)}">${esc(c)}<span class="cat-count">${count}</span></button>`;
+  }).join("");
+}
+
+function setCat(c){
+  active = c;
+  render();
+}
+
+function render(){
+  categories();
+  
+  const q = ($("search").value || "").toLowerCase().trim();
+  $("searchClear").style.display = q ? "block" : "none";
+
+  const list = data.filter(x => {
+    const matchCat = (active === "ทั้งหมด") 
+      ? true 
+      : (active === "⭐ รายการโปรด" ? !!x.fav : x.category === active);
+    
+    const searchTarget = ((x.name || "") + " " + (x.category || "") + " " + (x.content || "")).toLowerCase();
+    const matchSearch = !q || searchTarget.includes(q);
+    return matchCat && matchSearch;
+  });
+
+  // อัปเดตตัวนับสถิติ
+  $("statsCount").textContent = `แสดง ${list.length} จากทั้งหมด ${data.length} รายการ ${active !== "ทั้งหมด" ? `(หมวดหมู่: ${active})` : ""}`;
+
+  const grid = $("grid");
+  if(!list.length){
+    grid.innerHTML = `<div class="empty">🔍 ไม่พบ Pattern ที่ค้นหา</div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(x => `
+    <article class="card" data-id="${esc(x.id)}">
+      <div class="card-top">
+        <div class="title">${esc(x.name)}</div>
+        <button type="button" class="star ${x.fav ? 'on' : ''}" data-action="fav" title="${x.fav ? 'ลบออกจากรายการโปรด' : 'เพิ่มเป็นรายการโปรด'}">${x.fav ? '★' : '☆'}</button>
+      </div>
+      <div><span class="badge">${esc(x.category || "ทั่วไป")}</span></div>
+      <div class="content" id="content-${esc(x.id)}">${esc(x.content)}</div>
+      <button type="button" class="expand-btn" data-action="toggle-expand">ดูเพิ่มเติม ▼</button>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" data-action="copy">📋 คัดลอก</button>
+        <button type="button" class="btn btn-light" data-action="edit">✏️ แก้ไข</button>
+        <button type="button" class="btn btn-danger" data-action="delete">🗑️ ลบ</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+async function copyText(id){
+  const x = data.find(a => a.id === id);
+  if(!x) return;
+
+  let copied = false;
+  if(navigator.clipboard && window.isSecureContext){
+    try{
+      await navigator.clipboard.writeText(x.content);
+      copied = true;
+    }catch(e){
+      copied = false;
+    }
+  }
+
+  if(!copied){
+    try{
+      const t = document.createElement("textarea");
+      t.value = x.content;
+      t.style.position = "fixed";
+      t.style.left = "-9999px";
+      t.style.top = "-9999px";
+      t.style.opacity = "0";
+      document.body.appendChild(t);
+      t.focus();
+      t.select();
+      document.execCommand("copy");
+      t.remove();
+      copied = true;
+    }catch(err){
+      prompt("คัดลอกข้อความด้านล่าง:", x.content);
+      return;
+    }
+  }
+
+  showToast("คัดลอกแล้ว ✓");
+}
 
 function toggleFav(id){
- const x = data.find(a => a.id === id);
- x.fav = !x.fav;
- saveLocal();
- render();
+  const x = data.find(a => a.id === id);
+  if(!x) return;
+  x.fav = !x.fav;
+  saveLocal();
+  render();
+  showToast(x.fav ? "⭐ เพิ่มลงในรายการโปรดแล้ว" : "นำออกจากรายการโปรดแล้ว");
 }
 
 function openModal(){
-  $("modalTitle").textContent="เพิ่ม Pattern";
-  $("editId").value="";
-  $("name").value="";
-  $("content").value="";
-  populateCategorySelect();
-  if($("category").options.length) $("category").selectedIndex=0;
+  $("modalTitle").textContent = "เพิ่ม Pattern";
+  $("editId").value = "";
+  $("name").value = "";
+  $("content").value = "";
+  $("sendToGithub").checked = false;
+  $("githubOptionLabel").style.display = "flex";
+  
+  populateCategorySelect(active !== "ทั้งหมด" && active !== "⭐ รายการโปรด" ? active : "");
+  
   $("modal").classList.add("show");
-  setTimeout(()=>$("name").focus(),50);
+  setTimeout(() => $("name").focus(), 60);
 }
 
-async function savePattern(){
+function editPattern(id){
+  const x = data.find(a => a.id === id);
+  if(!x) return;
+
+  $("modalTitle").textContent = "แก้ไข Pattern";
+  $("editId").value = x.id;
+  $("name").value = x.name || "";
+  $("content").value = x.content || "";
+  $("githubOptionLabel").style.display = "none";
+  
+  populateCategorySelect(x.category || "");
+  
+  $("modal").classList.add("show");
+  setTimeout(() => $("name").focus(), 60);
+}
+
+function closeModal(){
+  $("modal").classList.remove("show");
+}
+
+function savePattern(){
   const name = $("name").value.trim();
   const content = $("content").value.trim();
-  const category = $("category").value;
+  const selectCat = $("category").value;
+  let category = selectCat;
 
-  if(!name || !content){
-    alert("กรุณากรอกชื่อและข้อความ Pattern");
+  if(selectCat === "__custom__"){
+    category = $("customCategory").value.trim();
+  }
+
+  if(!name){
+    alert("กรุณากรอกชื่อ Pattern");
+    $("name").focus();
+    return;
+  }
+
+  if(!category){
+    alert("กรุณาเลือกหรือระบุหมวดหมู่");
+    if(selectCat === "__custom__") $("customCategory").focus();
+    return;
+  }
+
+  if(!content){
+    alert("กรุณากรอกข้อความ Pattern");
+    $("content").focus();
     return;
   }
 
   const editId = $("editId").value;
 
-  // =========================
-  // แก้ไข Pattern เดิม
-  // =========================
+  // 1. แก้ไข Pattern เดิม
   if(editId){
     const x = data.find(a => a.id === editId);
-
     if(x){
-      Object.assign(x, {
-        name,
-        content,
-        category
-      });
-
+      x.name = name;
+      x.category = category;
+      x.content = content;
       saveLocal();
       closeModal();
       render();
-
-      showToast("✅ แก้ไข Pattern แล้ว");
+      showToast("✅ บันทึกการแก้ไขแล้ว");
     }
-
     return;
   }
 
-  // =========================
-  // เพิ่ม Pattern ใหม่
-  // =========================
-
-  const title =
-    "[PATTERN] " +
-    name.replace(/[\r\n]/g, " ").trim();
-
-  const body = [
-    "### ชื่อ Pattern",
-    "",
+  // 2. เพิ่ม Pattern ใหม่ บันทึกลงในรายการทันที
+  const newPattern = {
+    id: "p_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
     name,
-    "",
-    "### หมวดหมู่",
-    "",
     category,
-    "",
-    "### ข้อความ Pattern",
-    "",
     content,
-    "",
-    "### ส่งจาก",
-    "",
-    "Pattern Manager"
-  ].join("\n");
+    fav: false
+  };
 
-  const issueUrl =
-    "https://github.com/BimintandPalm/-Bimint/issues/new" +
-    "?title=" + encodeURIComponent(title) +
-    "&body=" + encodeURIComponent(body);
-
+  data.unshift(newPattern);
+  saveLocal();
   closeModal();
+  render();
+  showToast("✅ เพิ่ม Pattern สำเร็จ");
 
-  // เปิดหน้า GitHub สำหรับส่ง Pattern
-  window.location.href = issueUrl;
+  // ถ้าเลือกส่งไปยัง GitHub Issues ด้วย ให้เปิดในหน้าต่างใหม่โดยไม่ปิดหน้านี้
+  if($("sendToGithub").checked){
+    const title = "[PATTERN] " + name.replace(/[\r\n]/g, " ").trim();
+    const body = [
+      "### ชื่อ Pattern", "", name, "",
+      "### หมวดหมู่", "", category, "",
+      "### ข้อความ Pattern", "", content, "",
+      "### ส่งจาก", "", "Pattern Manager"
+    ].join("\n");
+
+    const issueUrl = "https://github.com/BimintandPalm/-Bimint/issues/new" +
+      "?title=" + encodeURIComponent(title) +
+      "&body=" + encodeURIComponent(body);
+
+    window.open(issueUrl, "_blank");
+  }
 }
-
-
-function editPattern(id){
- const x=data.find(a=>a.id===id);
- $("modalTitle").textContent="แก้ไข Pattern";$("editId").value=id;$("name").value=x.name;$("content").value=x.content;$("category").value=x.category;
- $("modal").classList.add("show");
-}
-
 
 function deletePattern(id){
- if(confirm("คุณต้องการลบ Pattern นี้ใช่หรือไม่?")){
- data = data.filter(x=>x.id!==id);
- saveLocal();
- render();
- }
-}
+  const x = data.find(a => a.id === id);
+  if(!x) return;
 
+  if(confirm(`คุณต้องการลบ Pattern "${x.name}" ใช่หรือไม่?`)){
+    data = data.filter(a => a.id !== id);
+    saveLocal();
+    render();
+    showToast("🗑️ ลบ Pattern แล้ว");
+  }
+}
 
 function resetData(){
- if(confirm("คุณต้องการล้างข้อมูลที่แก้ไข/เพิ่มไว้ และรีเซ็ตเป็นข้อมูลเริ่มต้นใช่หรือไม่?")){
-   localStorage.removeItem("bugfinn_patterns");
-   localStorage.removeItem("bugfinn_favorites");
-   data = initial.map(x=>({...x}));
-   active = "ทั้งหมด";
-   $("search").value = "";
-   render();
- }
+  if(confirm("คุณต้องการล้างข้อมูลที่แก้ไข/เพิ่มไว้ทั้งหมด และรีเซ็ตกลับเป็นข้อมูลเริ่มต้นใช่หรือไม่?")){
+    localStorage.removeItem("bugfinn_patterns");
+    localStorage.removeItem("bugfinn_favorites");
+    data = initial.map(x => ({ ...x, fav: false }));
+    active = "ทั้งหมด";
+    $("search").value = "";
+    saveLocal();
+    render();
+    showToast("↺ รีเซ็ตข้อมูลเริ่มต้นเรียบร้อยแล้ว");
+  }
 }
 
+function exportData(){
+  const exportItems = data.map(({ id, name, category, content, fav }) => ({ id, name, category, content, fav }));
+  const blob = new Blob([JSON.stringify(exportItems, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `bugfinn_patterns_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("📥 ส่งออกข้อมูลเรียบร้อยแล้ว");
+}
 
-function closeModal(){$("modal").classList.remove("show")}
+function importData(e){
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
 
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const imported = JSON.parse(evt.target.result);
+      if(!Array.isArray(imported)){
+        alert("ไฟล์ JSON ต้องเป็นรายการ Array ของ Pattern");
+        return;
+      }
+      
+      const validated = imported.filter(x => x && x.name && x.content).map((x, idx) => ({
+        id: x.id || ("p_imp_" + Date.now() + "_" + idx),
+        name: String(x.name),
+        category: String(x.category || "📌 อื่น ๆ"),
+        content: String(x.content),
+        fav: !!x.fav
+      }));
 
+      if(validated.length === 0){
+        alert("ไม่พบข้อมูล Pattern ที่ถูกต้องในไฟล์");
+        return;
+      }
 
-document.addEventListener("DOMContentLoaded",()=>{
+      if(confirm(`พบข้อมูลที่ถูกต้อง ${validated.length} รายการ ต้องการแทนที่ข้อมูลเดิมหรือรวมเข้าด้วยกัน?\n\n- กด [ตกลง / OK] เพื่อนำเข้ารวมกับข้อมูลเดิม\n- กด [ยกเลิก / Cancel] เพื่อแทนที่ข้อมูลทั้งหมดด้วยไฟล์นี้`)){
+        // รวมข้อมูล (Merge)
+        const existingIds = new Set(data.map(x => x.id));
+        const newOnes = validated.map(x => {
+          if(existingIds.has(x.id)) x.id = "p_imp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+          return x;
+        });
+        data = [...newOnes, ...data];
+      }else{
+        // แทนที่ข้อมูลเดิมทั้งหมด
+        data = validated;
+      }
+
+      saveLocal();
+      render();
+      showToast(`📤 นำเข้าข้อมูลสำเร็จ (${validated.length} รายการ)`);
+    }catch(err){
+      alert("ไฟล์ JSON ไม่ถูกต้อง: " + err.message);
+    }
+    $("importFileInput").value = "";
+  };
+  reader.readAsText(file);
+}
+
+// Event Listeners
+document.addEventListener("DOMContentLoaded", () => {
+  // Modal Buttons
   $("addPatternBtn").addEventListener("click", openModal);
   $("cancelModalBtn").addEventListener("click", closeModal);
   $("savePatternBtn").addEventListener("click", savePattern);
-  $("search").addEventListener("input", render);
-  $("modal").addEventListener("click", e => {
-  if(e.target.id === "modal"){
-    closeModal();
-  }
-});
 
-loadPatterns();
+  // Category select change (เปิดช่องพิมพ์หมวดหมู่ใหม่ถ้าเลือก __custom__)
+  $("category").addEventListener("change", e => {
+    const customWrap = $("customCategoryWrap");
+    if(e.target.value === "__custom__"){
+      customWrap.style.display = "block";
+      $("customCategory").focus();
+    }else{
+      customWrap.style.display = "none";
+    }
+  });
+
+  // Search input & Clear button
+  $("search").addEventListener("input", render);
+  $("searchClear").addEventListener("click", () => {
+    $("search").value = "";
+    $("search").focus();
+    render();
+  });
+
+  // Categories Event Delegation
+  $("cats").addEventListener("click", e => {
+    const btn = e.target.closest(".cat");
+    if(btn && btn.dataset.cat){
+      setCat(btn.dataset.cat);
+    }
+  });
+
+  // Grid Actions Event Delegation (Star, Copy, Edit, Delete, Expand)
+  $("grid").addEventListener("click", e => {
+    const card = e.target.closest(".card");
+    if(!card) return;
+    const id = card.dataset.id;
+    const actionBtn = e.target.closest("[data-action]");
+    if(!actionBtn) return;
+
+    const action = actionBtn.dataset.action;
+    if(action === "fav"){
+      toggleFav(id);
+    }else if(action === "copy"){
+      copyText(id);
+    }else if(action === "edit"){
+      editPattern(id);
+    }else if(action === "delete"){
+      deletePattern(id);
+    }else if(action === "toggle-expand"){
+      const contentEl = document.getElementById(`content-${id}`);
+      if(contentEl){
+        const isExp = contentEl.classList.toggle("expanded");
+        actionBtn.textContent = isExp ? "ย่อขึ้น ▲" : "ดูเพิ่มเติม ▼";
+      }
+    }
+  });
+
+  // Header Actions
+  $("resetBtn").addEventListener("click", resetData);
+  $("exportBtn").addEventListener("click", exportData);
+  $("importBtn").addEventListener("click", () => $("importFileInput").click());
+  $("importFileInput").addEventListener("change", importData);
+
+  // Modal Backdrop Click
+  $("modal").addEventListener("click", e => {
+    if(e.target.id === "modal"){
+      closeModal();
+    }
+  });
+
+  // Keyboard shortcut: Esc to close modal
+  document.addEventListener("keydown", e => {
+    if(e.key === "Escape" && $("modal").classList.contains("show")){
+      closeModal();
+    }
+  });
+
+  // โหลดข้อมูลเริ่มต้น
+  loadPatterns();
 });
 </script>
 </body>
