@@ -247,7 +247,7 @@ input,textarea,select{
 input:focus,textarea:focus,select:focus{border-color:var(--pink)}
 textarea{min-height:180px;resize:vertical;line-height:1.5}
 .custom-category-wrap{margin-top:8px;display:none}
-.github-sync-option{
+.sheet-sync-option{
   margin-top:14px;
   display:flex;
   flex-direction:column;
@@ -255,7 +255,7 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
   font-size:13px;
   color:var(--dark);
 }
-.github-sync-option label{
+.sheet-sync-option label{
   display:flex;
   align-items:center;
   gap:8px;
@@ -263,8 +263,28 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
   cursor:pointer;
   font-weight:600;
 }
-.github-sync-option input{width:auto;cursor:pointer}
-.github-sync-hint{font-size:12px;color:var(--muted);margin-left:24px}
+.sheet-sync-option input{width:auto;cursor:pointer}
+.sheet-sync-hint{font-size:12px;color:var(--muted);margin-left:24px}
+.status-badge-dot{
+  display:inline-block;
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#9ca3af;
+  vertical-align:middle;
+  margin-left:4px;
+  transition:background-color .3s,box-shadow .3s;
+}
+.status-badge-dot.connected{
+  background:#22c55e;
+  box-shadow:0 0 6px rgba(34,197,94,.7);
+}
+.status-badge-dot.error{
+  background:#ef4444;
+}
+.status-badge-dot.loading{
+  background:#eab308;
+}
 .modal-actions{display:flex;gap:10px;margin-top:20px}
 .modal-actions button{flex:1;padding:12px}
 .toast{
@@ -306,7 +326,8 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
     </div>
     <div class="header-actions">
       <a href="page2.html" class="btn btn-light" style="font-size:12px;text-decoration:none">🧮 คำนวณค่างวด</a>
-      <button type="button" class="btn btn-light" style="font-size:12px" id="syncBtn" title="ดึงข้อมูล Pattern ล่าสุดจาก GitHub ส่วนกลาง">🔄 ซิงค์ข้อมูล</button>
+      <button type="button" class="btn btn-light" style="font-size:12px" id="sheetSettingsBtn" title="ตั้งค่าการเชื่อมต่อ Google Sheet">📊 ตั้งค่า Google Sheet <span id="sheetStatusDot" class="status-badge-dot" title="สถานะเชื่อมต่อ Google Sheet"></span></button>
+      <button type="button" class="btn btn-light" style="font-size:12px" id="syncBtn" title="ดึงข้อมูล Pattern ล่าสุดจาก Google Sheet หรือส่วนกลาง">🔄 ซิงค์ข้อมูล</button>
       <button type="button" class="btn btn-light" style="font-size:12px" id="exportBtn">📥 ส่งออก (Export)</button>
       <button type="button" class="btn btn-light" style="font-size:12px" id="importBtn">📤 นำเข้า (Import)</button>
       <input type="file" id="importFileInput" accept=".json" style="display:none">
@@ -350,13 +371,13 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
     <label for="content">ข้อความ Pattern</label>
     <textarea id="content" placeholder="ใส่ข้อความที่ต้องการคัดลอก..."></textarea>
 
-    <div class="github-sync-option" id="githubOptionContainer">
+    <div class="sheet-sync-option" id="sheetOptionContainer">
       <label>
-        <input type="checkbox" id="sendToGithub" checked>
-        <span>🚀 ส่งเข้าสู่ระบบส่วนกลาง (GitHub) เพื่อให้ทุกคนในทีมเห็นด้วย</span>
+        <input type="checkbox" id="sendToSheet" checked>
+        <span>📊 บันทึกลง Google Sheet ทันที (ทุกคนในทีมจะเห็นข้อมูลพร้อมกัน)</span>
       </label>
-      <div class="github-sync-hint">
-        (เมื่อกดบันทึก จะเปิดหน้า GitHub ให้คุณกดปุ่มสีเขียว "Submit new issue" ระบบอัตโนมัติจะนำไปอัปเดตให้ทุกคนในทีมเห็นภายใน ~1 นาที)
+      <div class="sheet-sync-hint" id="sheetSyncHint">
+        (บันทึกข้อมูลเข้า Google Sheet อัตโนมัติแบบ Real-time ทันทีที่กดบันทึก)
       </div>
     </div>
 
@@ -367,11 +388,268 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
   </div>
 </div>
 
+<!-- Modal ตั้งค่า Google Sheet -->
+<div id="sheetSettingsModal" class="modal">
+  <div class="modal-box" style="max-width:620px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0;font-size:20px;color:var(--dark)">📊 ตั้งค่าเชื่อมต่อ Google Sheet</h2>
+      <button type="button" id="closeSheetSettingsBtn" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:0 4px">✕</button>
+    </div>
+
+    <div style="background:#fff7f8;border:1px solid var(--pink2);padding:12px 14px;border-radius:12px;margin-bottom:14px;font-size:13px;line-height:1.6">
+      💡 <strong>เชื่อมต่อ Google Sheet:</strong> เพื่อให้ทีมงานทุกคนบันทึก, แก้ไข, และเรียกดู Pattern ชุดเดียวกันจาก Google Sheet ได้โดยตรง
+    </div>
+
+    <label for="sheetApiUrl">URL เว็บแอป (Google Apps Script Web App URL)</label>
+    <input id="sheetApiUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" autocomplete="off">
+    <div id="sheetStatusMsg" style="font-size:12px;margin-top:6px;min-height:18px;color:var(--muted)"></div>
+
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button type="button" id="saveSheetUrlBtn" class="btn btn-primary" style="flex:1">💾 บันทึก URL</button>
+      <button type="button" id="testSheetBtn" class="btn btn-light" style="flex:1">🔍 ทดสอบเชื่อมต่อ</button>
+      <button type="button" id="uploadAllToSheetBtn" class="btn btn-light" style="flex:1" title="ส่งข้อมูล Pattern ทั้งหมดในเครื่องขึ้นไปเก็บใน Google Sheet">📤 นำข้อมูลทั้งหมดขึ้น Sheet</button>
+    </div>
+
+    <hr style="border:0;border-top:1px solid var(--border);margin:20px 0 16px">
+
+    <details style="font-size:13px;line-height:1.6;color:var(--dark)">
+      <summary style="cursor:pointer;font-weight:700;color:var(--pink);padding:4px 0">📖 วิธีสร้าง Google Sheet &amp; รับ URL (ทำครั้งเดียว 2 นาที)</summary>
+      <div style="margin-top:10px;padding:14px;background:#faf7f8;border-radius:12px;border:1px solid var(--border)">
+        <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px">
+          <li>สร้าง Google Sheet ใหม่ที่ <a href="https://sheets.new" target="_blank" style="color:var(--pink);font-weight:600">sheets.new</a></li>
+          <li>ไปที่เมนู <strong>ส่วนขยาย (Extensions)</strong> &gt; <strong>Apps Script</strong></li>
+          <li>ลบโค้ดเดิมใน <code>Code.gs</code> แล้ววางโค้ด Apps Script ลงไป</li>
+          <li>กดปุ่ม <strong>ทำให้ใช้งานได้ (Deploy)</strong> &gt; <strong>การทำให้ใช้งานได้รายการใหม่ (New deployment)</strong></li>
+          <li>เลือกประเภท <strong>เว็บแอป (Web app)</strong>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">• ทำงานในฐานะ: <strong>ตัวฉัน (Me)</strong><br>• ผู้ที่มีสิทธิ์เข้าถึง: <strong style="color:var(--danger)">ทุกคน (Anyone)</strong> *(สำคัญมาก!)*</div>
+          </li>
+          <li>กด <strong>ทำให้ใช้งานได้</strong> ให้สิทธิ์เข้าถึง และคัดลอก <strong>URL เว็บแอป (Web App URL)</strong> มาวางในช่องด้านบนนี้</li>
+        </ol>
+        <div style="margin-top:14px;display:flex;gap:8px">
+          <button type="button" id="copyAppsScriptBtn" class="btn btn-light" style="font-size:12px;flex:1">📋 คัดลอกโค้ด Apps Script</button>
+          <a href="google-apps-script.js" target="_blank" class="btn btn-light" style="font-size:12px;flex:1;text-decoration:none">📄 ดูไฟล์โค้ด (google-apps-script.js)</a>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
 <div id="toast" class="toast">คัดลอกแล้ว ✓</div>
 
 <script>
 const GITHUB_REPO = "BimintandPalm/-Bimint";
 const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/patterns.json`;
+const SHEET_URL_KEY = "bugfinn_sheet_url";
+
+// สามารถใส่ URL เริ่มต้นของ Google Apps Script Web App ได้ที่นี่ (หากมี)
+let GOOGLE_SHEET_API_URL = localStorage.getItem(SHEET_URL_KEY) || "";
+
+// โค้ด Apps Script สำหรับปุ่มคัดลอกในหน้าเว็บ
+const APPS_SCRIPT_CODE = `const SHEET_NAME = "Patterns";
+
+function getOrCreateSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.getSheets()[0];
+    sheet.setName(SHEET_NAME);
+  }
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["ID", "ชื่อ Pattern", "หมวดหมู่", "ข้อความ", "รายการโปรด", "อัปเดตล่าสุด"]);
+    const headerRange = sheet.getRange(1, 1, 1, 6);
+    headerRange.setFontWeight("bold").setBackground("#ead5da").setFontColor("#49363b");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function jsonOutput(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  try {
+    const sheet = getOrCreateSheet();
+    const rows = sheet.getDataRange().getValues();
+    if (rows.length <= 1) return jsonOutput({ status: "success", count: 0, data: [] });
+    const data = [];
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row[0] && !row[1]) continue;
+      data.push({
+        id: String(row[0] || ("p_" + i)),
+        name: String(row[1] || ""),
+        category: String(row[2] || "📌 อื่น ๆ"),
+        content: String(row[3] || ""),
+        fav: String(row[4]).toLowerCase() === "true" || row[4] === true,
+        updated_at: row[5] ? String(row[5]) : ""
+      });
+    }
+    return jsonOutput({ status: "success", count: data.length, data: data });
+  } catch (err) {
+    return jsonOutput({ status: "error", message: err.toString() });
+  }
+}
+
+function doPost(e) {
+  try {
+    let payload = {};
+    if (e.postData && e.postData.contents) {
+      try { payload = JSON.parse(e.postData.contents); } catch(ex) { payload = e.parameter || {}; }
+    } else if (e.parameter) {
+      payload = e.parameter;
+    }
+    const action = payload.action || "add";
+    const sheet = getOrCreateSheet();
+    const nowStr = Utilities.formatDate(new Date(), "Asia/Bangkok", "yyyy-MM-dd HH:mm:ss");
+
+    if (action === "add") {
+      const item = payload.item || payload;
+      const id = String(item.id || ("p_" + new Date().getTime()));
+      const name = String(item.name || "").trim();
+      const category = String(item.category || "📌 อื่น ๆ").trim();
+      const content = String(item.content || "");
+      const fav = item.fav ? true : false;
+      const rows = sheet.getDataRange().getValues();
+      let foundRow = -1;
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]) === id || (name && String(rows[i][1]) === name)) {
+          foundRow = i + 1;
+          break;
+        }
+      }
+      if (foundRow > 0) {
+        sheet.getRange(foundRow, 1, 1, 6).setValues([[id, name, category, content, fav, nowStr]]);
+        return jsonOutput({ status: "success", action: "updated", id: id });
+      } else {
+        sheet.appendRow([id, name, category, content, fav, nowStr]);
+        return jsonOutput({ status: "success", action: "added", id: id });
+      }
+    }
+
+    if (action === "update" || action === "edit") {
+      const item = payload.item || payload;
+      const id = String(item.id || "");
+      const name = String(item.name || "").trim();
+      const rows = sheet.getDataRange().getValues();
+      let foundRow = -1;
+      for (let i = 1; i < rows.length; i++) {
+        if ((id && String(rows[i][0]) === id) || (!id && name && String(rows[i][1]) === name)) {
+          foundRow = i + 1;
+          break;
+        }
+      }
+      if (foundRow > 0) {
+        const curFav = rows[foundRow - 1][4];
+        const newFav = item.fav !== undefined ? item.fav : curFav;
+        sheet.getRange(foundRow, 1, 1, 6).setValues([[
+          id || rows[foundRow - 1][0],
+          name || rows[foundRow - 1][1],
+          item.category !== undefined ? item.category : rows[foundRow - 1][2],
+          item.content !== undefined ? item.content : rows[foundRow - 1][3],
+          newFav,
+          nowStr
+        ]]);
+        return jsonOutput({ status: "success", action: "updated", id: id });
+      } else {
+        sheet.appendRow([id || ("p_" + new Date().getTime()), name, item.category || "📌 อื่น ๆ", item.content || "", !!item.fav, nowStr]);
+        return jsonOutput({ status: "success", action: "added_as_new" });
+      }
+    }
+
+    if (action === "delete") {
+      const id = String(payload.id || (payload.item && payload.item.id) || "");
+      const name = String(payload.name || (payload.item && payload.item.name) || "");
+      const rows = sheet.getDataRange().getValues();
+      let foundRow = -1;
+      for (let i = 1; i < rows.length; i++) {
+        if ((id && String(rows[i][0]) === id) || (name && String(rows[i][1]) === name)) {
+          foundRow = i + 1;
+          break;
+        }
+      }
+      if (foundRow > 0) {
+        sheet.deleteRow(foundRow);
+        return jsonOutput({ status: "success", action: "deleted", id: id });
+      } else {
+        return jsonOutput({ status: "warning", message: "not found" });
+      }
+    }
+
+    if (action === "batch_save" || action === "sync_all") {
+      const items = payload.items || [];
+      const lastRow = sheet.getLastRow();
+      if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
+      if (items.length > 0) {
+        const rowsToAdd = items.map((x, idx) => [
+          String(x.id || ("p_" + (new Date().getTime() + idx))),
+          String(x.name || "").trim(),
+          String(x.category || "📌 อื่น ๆ").trim(),
+          String(x.content || ""),
+          x.fav ? true : false,
+          nowStr
+        ]);
+        sheet.getRange(2, 1, rowsToAdd.length, 6).setValues(rowsToAdd);
+      }
+      return jsonOutput({ status: "success", action: "batch_saved", count: items.length });
+    }
+
+    return jsonOutput({ status: "error", message: "Unknown action" });
+  } catch (err) {
+    return jsonOutput({ status: "error", message: err.toString() });
+  }
+}`;
+
+function updateSheetDotStatus(status, title){
+  const dot = $("sheetStatusDot");
+  if(!dot) return;
+  dot.className = "status-badge-dot " + (status || "");
+  dot.title = title || (status === "connected" ? "เชื่อมต่อ Google Sheet แล้ว" : "สถานะเชื่อมต่อ Google Sheet");
+}
+
+async function callSheetApi(action, payload = {}){
+  if(!GOOGLE_SHEET_API_URL) return null;
+  const postBody = JSON.stringify({ action, ...payload });
+  try{
+    const res = await fetch(GOOGLE_SHEET_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: postBody
+    });
+    const result = await res.json();
+    if(result && result.status === "error"){
+      throw new Error(result.message || "เกิดข้อผิดพลาดจาก Google Sheet");
+    }
+    return result;
+  }catch(err){
+    console.warn("Direct POST failed, attempting no-cors fallback:", err);
+    try{
+      await fetch(GOOGLE_SHEET_API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: postBody
+      });
+      return { status: "success", mode: "no-cors" };
+    }catch(err2){
+      console.error("Sheet API error:", err2);
+      throw err;
+    }
+  }
+}
+
+async function fetchOnlinePatternsFromSheet(){
+  if(!GOOGLE_SHEET_API_URL) return null;
+  const sep = GOOGLE_SHEET_API_URL.includes("?") ? "&" : "?";
+  const url = `${GOOGLE_SHEET_API_URL}${sep}action=get&v=${Date.now()}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if(!res.ok) throw new Error("HTTP " + res.status);
+  const json = await res.json();
+  if(json && json.status === "success" && Array.isArray(json.data)){
+    return json.data;
+  }
+  throw new Error((json && json.message) || "รูปแบบข้อมูลจาก Sheet ไม่ถูกต้อง");
+}
 
 const defaultCategories = [
   "🔍 ตรวจสอบเครดิต", "✅ เครดิตผ่าน", "❌ ไม่อนุมัติ", "💰 ดาวน์", 
@@ -477,7 +755,56 @@ async function loadPatterns(isManualSync = false){
     favoriteIds = [];
   }
 
-  // ดึงข้อมูลออนไลน์จาก GitHub
+  // 1. ถ้ามีการตั้งค่า Google Sheet ให้ดึงข้อมูลจาก Google Sheet ก่อน
+  if(GOOGLE_SHEET_API_URL){
+    updateSheetDotStatus("loading", "กำลังดึงข้อมูลจาก Google Sheet...");
+    try{
+      const sheetItems = await fetchOnlinePatternsFromSheet();
+      if(Array.isArray(sheetItems)){
+        if(sheetItems.length === 0){
+          // กรณี Sheet เชื่อมต่อได้แต่ยังไม่มีแถวข้อมูล ให้คงข้อมูลเดิมไว้ป้องกันหน้าจอว่างเปล่า
+          const localRaw = localStorage.getItem("bugfinn_patterns");
+          let existingData = [];
+          if(localRaw){
+            try{ existingData = JSON.parse(localRaw); }catch(e){}
+          }
+          if(!Array.isArray(existingData) || existingData.length === 0){
+            existingData = initial.map(x => ({ ...x, fav: favoriteIds.includes(x.id) }));
+          }
+          data = existingData;
+          saveLocal();
+          render();
+          updateSheetDotStatus("connected", "เชื่อมต่อ Google Sheet แล้ว (Sheet ยังว่างเปล่า - กดนำข้อมูลขึ้น Sheet ได้)");
+          if(isManualSync){
+            showToast("ℹ️ ใน Google Sheet ยังไม่มีข้อมูล (สามารถกดปุ่ม 'นำข้อมูลทั้งหมดขึ้น Sheet' ได้ครับ)");
+          }
+          return;
+        }
+
+        data = sheetItems.map(item => ({
+          ...item,
+          fav: !!item.fav || favoriteIds.includes(item.id)
+        }));
+        saveLocal();
+        render();
+        updateSheetDotStatus("connected", `เชื่อมต่อ Google Sheet แล้ว (${data.length} รายการ)`);
+        if(isManualSync){
+          showToast(`🔄 ซิงค์ข้อมูลจาก Google Sheet สำเร็จ (${data.length} รายการ)`);
+        }
+        return;
+      }
+    }catch(sheetErr){
+      console.warn("ไม่สามารถโหลดจาก Google Sheet ได้:", sheetErr);
+      updateSheetDotStatus("error", "เชื่อมต่อ Google Sheet ล้มเหลว: " + sheetErr.message);
+      if(isManualSync){
+        showToast("⚠️ ไม่สามารถดึงข้อมูลจาก Google Sheet ได้: " + sheetErr.message);
+      }
+    }
+  }else{
+    updateSheetDotStatus("", "ยังไม่ได้ตั้งค่า Google Sheet");
+  }
+
+  // 2. ถ้าไม่ได้ใช้ Google Sheet หรือดึงไม่สำเร็จ ให้ลองดึงจาก GitHub / ./patterns.json
   const onlineData = await fetchOnlinePatterns();
 
   if(onlineData && onlineData.length > 0){
@@ -509,6 +836,7 @@ async function loadPatterns(isManualSync = false){
     return;
   }
 
+  // 3. ใช้ข้อมูลจาก LocalStorage
   const localRaw = localStorage.getItem("bugfinn_patterns");
   if(localRaw !== null){
     try{
@@ -525,6 +853,7 @@ async function loadPatterns(isManualSync = false){
     }catch(e){}
   }
 
+  // 4. ใช้ข้อมูลเริ่มต้น
   data = initial.map(x => ({
     ...x,
     fav: favoriteIds.includes(x.id)
@@ -686,8 +1015,8 @@ function openModal(){
   $("editId").value = "";
   $("name").value = "";
   $("content").value = "";
-  $("sendToGithub").checked = true;
-  $("githubOptionContainer").style.display = "block";
+  $("sendToSheet").checked = true;
+  $("sheetOptionContainer").style.display = "block";
   
   populateCategorySelect(active !== "ทั้งหมด" && active !== "⭐ รายการโปรด" ? active : "");
   
@@ -703,7 +1032,7 @@ function editPattern(id){
   $("editId").value = x.id;
   $("name").value = x.name || "";
   $("content").value = x.content || "";
-  $("githubOptionContainer").style.display = "none";
+  $("sheetOptionContainer").style.display = "none";
   
   populateCategorySelect(x.category || "");
   
@@ -715,7 +1044,7 @@ function closeModal(){
   $("modal").classList.remove("show");
 }
 
-function savePattern(){
+async function savePattern(){
   const name = $("name").value.trim();
   const content = $("content").value.trim();
   const selectCat = $("category").value;
@@ -755,7 +1084,18 @@ function savePattern(){
       saveLocal();
       closeModal();
       render();
-      showToast("✅ บันทึกการแก้ไขแล้ว");
+
+      if(GOOGLE_SHEET_API_URL){
+        showToast("⏳ กำลังอัปเดต Google Sheet...");
+        callSheetApi("update", { item: { id: editId, name, category, content } })
+          .then(() => showToast("✅ บันทึกและอัปเดตลง Google Sheet สำเร็จ"))
+          .catch(err => {
+            console.error(err);
+            showToast("⚠️ บันทึกในเครื่องแล้ว แต่อัปเดต Google Sheet ไม่สำเร็จ");
+          });
+      }else{
+        showToast("✅ บันทึกการแก้ไขแล้ว (ในเครื่อง)");
+      }
     }
     return;
   }
@@ -774,23 +1114,20 @@ function savePattern(){
   closeModal();
   render();
 
-  // ตรวจสอบว่าเลือกส่งขึ้น GitHub ส่วนกลางหรือไม่
-  const shouldSyncGithub = $("sendToGithub").checked;
-  if(shouldSyncGithub){
-    const title = "[PATTERN] " + name.replace(/[\r\n]/g, " ").trim();
-    const body = [
-      "### ชื่อ Pattern", "", name, "",
-      "### หมวดหมู่", "", category, "",
-      "### ข้อความ Pattern", "", content, "",
-      "### ส่งจาก", "", "Pattern Manager"
-    ].join("\n");
-
-    const issueUrl = `https://github.com/${GITHUB_REPO}/issues/new` +
-      "?title=" + encodeURIComponent(title) +
-      "&body=" + encodeURIComponent(body);
-
-    window.open(issueUrl, "_blank");
-    showToast("✅ เพิ่มในเครื่องแล้ว | กำลังเปิด GitHub ให้กด Submit...");
+  const shouldSyncSheet = $("sendToSheet").checked;
+  if(shouldSyncSheet && GOOGLE_SHEET_API_URL){
+    showToast("⏳ กำลังบันทึกลง Google Sheet...");
+    callSheetApi("add", { item: newPattern })
+      .then(() => {
+        showToast("✅ เพิ่ม Pattern และบันทึกลง Google Sheet สำเร็จ!");
+        updateSheetDotStatus("connected");
+      })
+      .catch(err => {
+        console.error(err);
+        showToast("⚠️ บันทึกในเครื่องแล้ว แต่ส่ง Google Sheet ไม่สำเร็จ: " + err.message);
+      });
+  }else if(shouldSyncSheet && !GOOGLE_SHEET_API_URL){
+    showToast("✅ บันทึกในเครื่องแล้ว (กด 'ตั้งค่า Google Sheet' เพื่อเปิดซิงค์ออนไลน์)");
   }else{
     showToast("✅ เพิ่ม Pattern สำเร็จ (บันทึกเฉพาะในเครื่องนี้)");
   }
@@ -804,8 +1141,138 @@ function deletePattern(id){
     data = data.filter(a => a.id !== id);
     saveLocal();
     render();
-    showToast("🗑️ ลบ Pattern แล้ว");
+
+    if(GOOGLE_SHEET_API_URL){
+      callSheetApi("delete", { id, name: x.name })
+        .then(() => showToast("🗑️ ลบ Pattern จากเครื่องและ Google Sheet แล้ว"))
+        .catch(err => {
+          console.error(err);
+          showToast("🗑️ ลบจากเครื่องแล้ว แต่ลบใน Google Sheet ไม่สำเร็จ");
+        });
+    }else{
+      showToast("🗑️ ลบ Pattern แล้ว");
+    }
   }
+}
+
+function openSheetSettingsModal(){
+  $("sheetApiUrl").value = GOOGLE_SHEET_API_URL;
+  const statusMsg = $("sheetStatusMsg");
+  if(GOOGLE_SHEET_API_URL){
+    statusMsg.textContent = "เชื่อมต่อกับ URL นี้อยู่ (คลิก 'ทดสอบเชื่อมต่อ' เพื่อตรวจสอบ)";
+    statusMsg.style.color = "var(--muted)";
+  }else{
+    statusMsg.textContent = "ยังไม่ได้ระบุ URL เว็บแอป";
+    statusMsg.style.color = "var(--muted)";
+  }
+  $("sheetSettingsModal").classList.add("show");
+}
+
+function closeSheetSettingsModal(){
+  $("sheetSettingsModal").classList.remove("show");
+}
+
+function saveSheetUrl(notify = true){
+  const url = $("sheetApiUrl").value.trim();
+  GOOGLE_SHEET_API_URL = url;
+  if(url){
+    localStorage.setItem(SHEET_URL_KEY, url);
+    updateSheetDotStatus("loading", "มี URL Google Sheet");
+    if(notify) showToast("💾 บันทึก URL เรียบร้อย");
+    testSheetConnection();
+  }else{
+    localStorage.removeItem(SHEET_URL_KEY);
+    updateSheetDotStatus("", "ยังไม่ได้เชื่อมต่อ");
+    $("sheetStatusMsg").textContent = "ล้าง URL แล้ว (ทำงานแบบออฟไลน์)";
+    $("sheetStatusMsg").style.color = "var(--muted)";
+    if(notify) showToast("ล้าง URL เรียบร้อย");
+  }
+}
+
+async function testSheetConnection(){
+  const url = $("sheetApiUrl").value.trim() || GOOGLE_SHEET_API_URL;
+  const statusMsg = $("sheetStatusMsg");
+  if(!url){
+    statusMsg.textContent = "กรุณากรอก URL ก่อนกดทดสอบ";
+    statusMsg.style.color = "var(--danger)";
+    return;
+  }
+  statusMsg.textContent = "⏳ กำลังทดสอบการเชื่อมต่อไปยัง Google Sheet...";
+  statusMsg.style.color = "var(--pink)";
+  updateSheetDotStatus("loading");
+
+  try{
+    const sep = url.includes("?") ? "&" : "?";
+    const res = await fetch(`${url}${sep}action=get&v=${Date.now()}`, { cache: "no-store" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    if(json && json.status === "success"){
+      // บันทึก URL อัตโนมัติเมื่อทดสอบผ่าน
+      GOOGLE_SHEET_API_URL = url;
+      localStorage.setItem(SHEET_URL_KEY, url);
+      statusMsg.textContent = `🟢 เชื่อมต่อสำเร็จและบันทึก URL แล้ว! พบคลัง Pattern ใน Sheet ทั้งหมด ${json.count || (json.data && json.data.length) || 0} รายการ`;
+      statusMsg.style.color = "var(--success)";
+      updateSheetDotStatus("connected", "เชื่อมต่อ Google Sheet แล้ว");
+      showToast("🟢 ทดสอบเชื่อมต่อ Google Sheet สำเร็จ!");
+    }else{
+      throw new Error((json && json.message) || "ตอบกลับไม่ถูกต้อง");
+    }
+  }catch(err){
+    statusMsg.textContent = `🔴 เชื่อมต่อไม่สำเร็จ: ${err.message} (โปรดตรวจสอบว่าสิทธิ์เข้าถึงตั้งเป็น "ทุกคน/Anyone" หรือไม่)`;
+    statusMsg.style.color = "var(--danger)";
+    updateSheetDotStatus("error", "เชื่อมต่อไม่สำเร็จ");
+    showToast("🔴 เชื่อมต่อไม่สำเร็จ: " + err.message);
+  }
+}
+
+async function uploadAllToSheet(){
+  const inputUrl = $("sheetApiUrl") ? $("sheetApiUrl").value.trim() : "";
+  if(inputUrl && (!GOOGLE_SHEET_API_URL || GOOGLE_SHEET_API_URL !== inputUrl)){
+    GOOGLE_SHEET_API_URL = inputUrl;
+    localStorage.setItem(SHEET_URL_KEY, inputUrl);
+  }
+
+  if(!GOOGLE_SHEET_API_URL){
+    alert("กรุณากรอกและบันทึก URL เว็บแอปก่อนทำการอัปโหลดข้อมูล");
+    return;
+  }
+  if(!confirm(`ต้องการนำข้อมูล Pattern ในเครื่องทั้งหมด (${data.length} รายการ) ขึ้นไปบันทึกแทนที่ใน Google Sheet ใช่หรือไม่?\n\n(เหมาะสำหรับตอนเริ่มใช้งาน เพื่อให้ข้อมูลเดิมเข้าไปอยู่ใน Google Sheet ครั้งแรก)`)){
+    return;
+  }
+
+  showToast("⏳ กำลังอัปโหลดข้อมูลทั้งหมดขึ้น Google Sheet...");
+  try{
+    await callSheetApi("batch_save", { items: data });
+    showToast(`✅ อัปโหลด Pattern ทั้งหมด ${data.length} รายการขึ้น Google Sheet สำเร็จ!`);
+    updateSheetDotStatus("connected");
+    $("sheetStatusMsg").textContent = `🟢 อัปโหลดข้อมูลทั้งหมด ${data.length} รายการขึ้น Sheet เรียบร้อยแล้ว`;
+    $("sheetStatusMsg").style.color = "var(--success)";
+  }catch(err){
+    alert("อัปโหลดไม่สำเร็จ: " + err.message);
+    showToast("⚠️ อัปโหลดไม่สำเร็จ: " + err.message);
+  }
+}
+
+function copyAppsScriptCode(){
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(() => {
+      showToast("📋 คัดลอกโค้ด Apps Script แล้ว! นำไปวางใน Code.gs ได้เลย");
+    }).catch(() => fallbackCopyCode());
+  }else{
+    fallbackCopyCode();
+  }
+}
+
+function fallbackCopyCode(){
+  const ta = document.createElement("textarea");
+  ta.value = APPS_SCRIPT_CODE;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  ta.remove();
+  showToast("📋 คัดลอกโค้ด Apps Script แล้ว! นำไปวางใน Code.gs ได้เลย");
 }
 
 function resetData(){
@@ -941,6 +1408,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Google Sheet Modal & Actions
+  $("sheetSettingsBtn").addEventListener("click", openSheetSettingsModal);
+  $("closeSheetSettingsBtn").addEventListener("click", closeSheetSettingsModal);
+  $("saveSheetUrlBtn").addEventListener("click", () => saveSheetUrl(true));
+  $("testSheetBtn").addEventListener("click", testSheetConnection);
+  $("uploadAllToSheetBtn").addEventListener("click", uploadAllToSheet);
+  $("copyAppsScriptBtn").addEventListener("click", copyAppsScriptCode);
+
   // Header Actions
   $("syncBtn").addEventListener("click", () => loadPatterns(true));
   $("resetBtn").addEventListener("click", resetData);
@@ -954,11 +1429,17 @@ document.addEventListener("DOMContentLoaded", () => {
       closeModal();
     }
   });
+  $("sheetSettingsModal").addEventListener("click", e => {
+    if(e.target.id === "sheetSettingsModal"){
+      closeSheetSettingsModal();
+    }
+  });
 
   // Keyboard shortcut: Esc to close modal
   document.addEventListener("keydown", e => {
-    if(e.key === "Escape" && $("modal").classList.contains("show")){
-      closeModal();
+    if(e.key === "Escape"){
+      if($("modal").classList.contains("show")) closeModal();
+      if($("sheetSettingsModal").classList.contains("show")) closeSheetSettingsModal();
     }
   });
 
