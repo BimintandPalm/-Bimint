@@ -401,12 +401,13 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
     </div>
 
     <label for="sheetApiUrl">URL เว็บแอป (Google Apps Script Web App URL)</label>
-    <input id="sheetApiUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" autocomplete="off">
+    <input id="sheetApiUrl" value="https://script.google.com/macros/s/AKfycbxtDl7h6CWp7aMSzbV4sCtmqIZjD4b3JajgSg8o8nN0u8uBScWiJ7ubscBsTlgErn3t6w/exec" placeholder="https://script.google.com/macros/s/AKfycb.../exec" autocomplete="off">
     <div id="sheetStatusMsg" style="font-size:12px;margin-top:6px;min-height:18px;color:var(--muted)"></div>
 
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
       <button type="button" id="saveSheetUrlBtn" class="btn btn-primary" style="flex:1">💾 บันทึก URL</button>
       <button type="button" id="testSheetBtn" class="btn btn-light" style="flex:1">🔍 ทดสอบเชื่อมต่อ</button>
+      <button type="button" id="resetSheetUrlBtn" class="btn btn-light" style="flex:1" title="คืนค่าเป็น URL เริ่มต้นของระบบ">↺ คืนค่าเดิม</button>
       <button type="button" id="uploadAllToSheetBtn" class="btn btn-light" style="flex:1" title="ส่งข้อมูล Pattern ทั้งหมดในเครื่องขึ้นไปเก็บใน Google Sheet">📤 นำข้อมูลทั้งหมดขึ้น Sheet</button>
     </div>
 
@@ -441,8 +442,21 @@ const GITHUB_REPO = "BimintandPalm/-Bimint";
 const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/patterns.json`;
 const SHEET_URL_KEY = "bugfinn_sheet_url";
 
-// สามารถใส่ URL เริ่มต้นของ Google Apps Script Web App ได้ที่นี่ (หากมี)
-let GOOGLE_SHEET_API_URL = localStorage.getItem(SHEET_URL_KEY) || "";
+// URL เริ่มต้นของ Google Apps Script Web App ที่เชื่อมต่อโดยตรง
+const DEFAULT_SHEET_API_URL = "https://script.google.com/macros/s/AKfycbxtDl7h6CWp7aMSzbV4sCtmqIZjD4b3JajgSg8o8nN0u8uBScWiJ7ubscBsTlgErn3t6w/exec";
+let GOOGLE_SHEET_API_URL = DEFAULT_SHEET_API_URL;
+
+try {
+  const saved = localStorage.getItem(SHEET_URL_KEY);
+  if (saved === "__OFFLINE__") {
+    GOOGLE_SHEET_API_URL = "";
+  } else if (saved && saved.startsWith("http") && saved !== DEFAULT_SHEET_API_URL) {
+    GOOGLE_SHEET_API_URL = saved;
+  } else {
+    GOOGLE_SHEET_API_URL = DEFAULT_SHEET_API_URL;
+    localStorage.setItem(SHEET_URL_KEY, DEFAULT_SHEET_API_URL);
+  }
+} catch (e) {}
 
 // โค้ด Apps Script สำหรับปุ่มคัดลอกในหน้าเว็บ
 const APPS_SCRIPT_CODE = `const SHEET_NAME = "Patterns";
@@ -1156,13 +1170,13 @@ function deletePattern(id){
 }
 
 function openSheetSettingsModal(){
-  $("sheetApiUrl").value = GOOGLE_SHEET_API_URL;
+  $("sheetApiUrl").value = GOOGLE_SHEET_API_URL || DEFAULT_SHEET_API_URL;
   const statusMsg = $("sheetStatusMsg");
   if(GOOGLE_SHEET_API_URL){
     statusMsg.textContent = "เชื่อมต่อกับ URL นี้อยู่ (คลิก 'ทดสอบเชื่อมต่อ' เพื่อตรวจสอบ)";
     statusMsg.style.color = "var(--muted)";
   }else{
-    statusMsg.textContent = "ยังไม่ได้ระบุ URL เว็บแอป";
+    statusMsg.textContent = "ปิดการเชื่อมต่ออยู่ (ออฟไลน์) - คลิก 'คืนค่าเดิม' เพื่อเชื่อมต่อ URL เริ่มต้น";
     statusMsg.style.color = "var(--muted)";
   }
   $("sheetSettingsModal").classList.add("show");
@@ -1181,11 +1195,11 @@ function saveSheetUrl(notify = true){
     if(notify) showToast("💾 บันทึก URL เรียบร้อย");
     testSheetConnection();
   }else{
-    localStorage.removeItem(SHEET_URL_KEY);
+    localStorage.setItem(SHEET_URL_KEY, "__OFFLINE__");
     updateSheetDotStatus("", "ยังไม่ได้เชื่อมต่อ");
-    $("sheetStatusMsg").textContent = "ล้าง URL แล้ว (ทำงานแบบออฟไลน์)";
+    $("sheetStatusMsg").textContent = "ปิดการเชื่อมต่อแล้ว (ทำงานแบบออฟไลน์)";
     $("sheetStatusMsg").style.color = "var(--muted)";
-    if(notify) showToast("ล้าง URL เรียบร้อย");
+    if(notify) showToast("ปิดการเชื่อมต่อเรียบร้อย");
   }
 }
 
@@ -1413,6 +1427,10 @@ document.addEventListener("DOMContentLoaded", () => {
   $("closeSheetSettingsBtn").addEventListener("click", closeSheetSettingsModal);
   $("saveSheetUrlBtn").addEventListener("click", () => saveSheetUrl(true));
   $("testSheetBtn").addEventListener("click", testSheetConnection);
+  $("resetSheetUrlBtn").addEventListener("click", () => {
+    $("sheetApiUrl").value = DEFAULT_SHEET_API_URL;
+    saveSheetUrl(true);
+  });
   $("uploadAllToSheetBtn").addEventListener("click", uploadAllToSheet);
   $("copyAppsScriptBtn").addEventListener("click", copyAppsScriptCode);
 
